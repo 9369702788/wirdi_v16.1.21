@@ -18,6 +18,12 @@ class _AccountScreenState extends State<AccountScreen> {
     try {
       await SyncService.instance.syncNow();
       setState(() { _ok = true; _msg = l.authSyncSuccess; });
+    } on PartialSyncException catch (e) {
+      // Some sections failed but others succeeded -- tell the user
+      // plainly instead of the previous behavior of either claiming
+      // full success or (worse) a single failure aborting everything
+      // silently with no visibility into what actually made it through.
+      setState(() { _ok = false; _msg = 'Sync partially failed: ' + e.failedSections.join(', '); });
     } on NotSignedInException {
       // Not a real failure -- there's simply no account to sync yet
       // (the app is fully usable without signing in). Make that state

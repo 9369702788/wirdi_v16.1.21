@@ -29,6 +29,30 @@ class _LoginScreenState extends State<LoginScreen> {
     finally { if (mounted) setState(() => _loading = false); }
   }
 
+  /// FIX: "Skip for now" used to navigate straight to /home with zero
+  /// confirmation or feedback -- users kept mistaking it for a successful
+  /// sign-in with whatever they had typed (especially since it sits right
+  /// below the Sign In button), reporting it as "any email/password gets
+  /// accepted". It never touched Firebase Auth at all; this makes that
+  /// explicit and impossible to trigger by accident.
+  Future<void> _skip() async {
+    final l = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l.authSkipConfirmTitle),
+        content: Text(l.authSkipConfirmBody),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l.commonCancel)),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(l.authSkipConfirmAction)),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      Navigator.pushReplacementNamed(context, '/home');
+    }
+  }
+
   String _msg(String code) {
     const m = {'user-not-found':'No account with this email.','wrong-password':'Incorrect password.','invalid-email':'Invalid email.','too-many-requests':'Too many attempts. Try later.'};
     return m[code] ?? 'Sign-in failed. Please try again.';
@@ -81,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Text(l.authNoAccount, style: const TextStyle(color: Colors.white70)),
           TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())), child: Text(l.authRegister, style: const TextStyle(color: AppColors.goldAccent, fontWeight: FontWeight.bold))),
         ]),
-        TextButton(onPressed: () => Navigator.pushReplacementNamed(context, '/home'), child: Text(l.authSkipForNow, style: const TextStyle(color: Colors.white38, fontSize: 13))),
+        TextButton(onPressed: _skip, child: Text(l.authSkipForNow, style: const TextStyle(color: Colors.white38, fontSize: 13))),
       ])))));
   }
 }

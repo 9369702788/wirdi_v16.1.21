@@ -686,5 +686,8 @@
   "khatmaCalendarTooltip": "Okuma takvimi",
   "authSyncNoAccount": "Oturum açmadınız -- verilerinizi senkronize etmek için önce oturum açın",
   "toolPrecisionQiblaTitle": "Hassas Kible (Pro)",
-  "toolPrecisionQiblaSubtitle": "Jeomanyetik model gercek kuzey pusulasi"
+  "toolPrecisionQiblaSubtitle": "Jeomanyetik model gercek kuzey pusulasi",
+  "authSkipConfirmTitle": "Hesap olmadan devam edilsin mi?",
+  "authSkipConfirmBody": "Oturum acmamis olacaksiniz ve ilerlemeniz cihazlar arasinda senkronize edilmeyecek. Daha sonra istediginiz zaman Ayarlardan oturum acabilirsiniz.",
+  "authSkipConfirmAction": "Hesapsiz devam et"
 }

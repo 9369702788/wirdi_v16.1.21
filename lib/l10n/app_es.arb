@@ -1126,5 +1126,8 @@
   "khatmaCalendarTooltip": "Calendario de lectura",
   "authSyncNoAccount": "No has iniciado sesión — inicia sesión primero para sincronizar tus datos",
   "toolPrecisionQiblaTitle": "Qibla de precision (Pro)",
-  "toolPrecisionQiblaSubtitle": "Brujula de norte verdadero con modelo geomagnetico"
+  "toolPrecisionQiblaSubtitle": "Brujula de norte verdadero con modelo geomagnetico",
+  "authSkipConfirmTitle": "Continuar sin una cuenta?",
+  "authSkipConfirmBody": "No iniciaras sesion y tu progreso no se sincronizara entre dispositivos. Puedes iniciar sesion mas tarde desde Ajustes.",
+  "authSkipConfirmAction": "Continuar sin cuenta"
 }

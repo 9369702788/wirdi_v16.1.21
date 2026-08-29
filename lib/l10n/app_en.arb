@@ -1126,5 +1126,8 @@
   "khatmaCalendarTooltip": "Reading calendar",
   "authSyncNoAccount": "You're not signed in -- sign in first to sync your data",
   "toolPrecisionQiblaTitle": "Precision Qibla (Pro)",
-  "toolPrecisionQiblaSubtitle": "Geomagnetic-model true-north compass"
+  "toolPrecisionQiblaSubtitle": "Geomagnetic-model true-north compass",
+  "authSkipConfirmTitle": "Continue without an account?",
+  "authSkipConfirmBody": "You will not be signed in, and your progress will not sync across devices. You can sign in anytime later from Settings.",
+  "authSkipConfirmAction": "Continue without account"
 }

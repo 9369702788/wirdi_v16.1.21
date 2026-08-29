@@ -686,5 +686,8 @@
   "khatmaCalendarTooltip": "Lesekalender",
   "authSyncNoAccount": "Du bist nicht angemeldet -- melde dich zuerst an, um deine Daten zu synchronisieren",
   "toolPrecisionQiblaTitle": "Praezise Qibla (Pro)",
-  "toolPrecisionQiblaSubtitle": "Geomagnetische echte Nordkompass"
+  "toolPrecisionQiblaSubtitle": "Geomagnetische echte Nordkompass",
+  "authSkipConfirmTitle": "Ohne Konto fortfahren?",
+  "authSkipConfirmBody": "Sie werden nicht angemeldet, und Ihr Fortschritt wird nicht geraetuebergreifend synchronisiert. Sie koennen sich jederzeit spaeter in den Einstellungen anmelden.",
+  "authSkipConfirmAction": "Ohne Konto fortfahren"
 }

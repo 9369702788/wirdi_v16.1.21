@@ -686,5 +686,8 @@
   "khatmaCalendarTooltip": "تقويم القراءة",
   "authSyncNoAccount": "لست مسجّلاً الدخول -- سجّل الدخول أولًا لمزامنة بياناتك",
   "toolPrecisionQiblaTitle": "القبلة الدقيقة (احترافي)",
-  "toolPrecisionQiblaSubtitle": "بوصلة اتجاه الشمال الحقيقي بنموذج مغناطيسي أرضي"
+  "toolPrecisionQiblaSubtitle": "بوصلة اتجاه الشمال الحقيقي بنموذج مغناطيسي أرضي",
+  "authSkipConfirmTitle": "المتابعة من غير حساب؟",
+  "authSkipConfirmBody": "لن يتم تسجيل دخولك، ولن تتم مزامنة تقدمك بين الأجهزة. يمكنك تسجيل الدخول في أي وقت لاحقًا من الإعدادات.",
+  "authSkipConfirmAction": "المتابعة بدون حساب"
 }

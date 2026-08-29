@@ -1126,5 +1126,8 @@
   "khatmaCalendarTooltip": "Calendrier de lecture",
   "authSyncNoAccount": "Vous n'êtes pas connecté — connectez-vous d'abord pour synchroniser vos données",
   "toolPrecisionQiblaTitle": "Qibla de precision (Pro)",
-  "toolPrecisionQiblaSubtitle": "Boussole nord vrai a modele geomagnetique"
+  "toolPrecisionQiblaSubtitle": "Boussole nord vrai a modele geomagnetique",
+  "authSkipConfirmTitle": "Continuer sans compte ?",
+  "authSkipConfirmBody": "Vous ne serez pas connecte et votre progression ne sera pas synchronisee entre les appareils. Vous pouvez vous connecter plus tard depuis les Parametres.",
+  "authSkipConfirmAction": "Continuer sans compte"
 }

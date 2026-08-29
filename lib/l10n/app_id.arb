@@ -1126,5 +1126,8 @@
   "khatmaCalendarTooltip": "Kalender bacaan",
   "authSyncNoAccount": "Anda belum masuk — masuk terlebih dahulu untuk menyinkronkan data Anda",
   "toolPrecisionQiblaTitle": "Kiblat Presisi (Pro)",
-  "toolPrecisionQiblaSubtitle": "Kompas utara sejati model geomagnetik"
+  "toolPrecisionQiblaSubtitle": "Kompas utara sejati model geomagnetik",
+  "authSkipConfirmTitle": "Lanjutkan tanpa akun?",
+  "authSkipConfirmBody": "Anda tidak akan masuk, dan progres Anda tidak akan disinkronkan antar perangkat. Anda dapat masuk kapan saja nanti dari Pengaturan.",
+  "authSkipConfirmAction": "Lanjutkan tanpa akun"
 }
