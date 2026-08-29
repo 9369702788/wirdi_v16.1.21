@@ -1,0 +1,249 @@
+name: Build Wirdi Test APK
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build debug APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: false
+
+      - name: Flutter doctor
+        run: flutter doctor -v
+
+      - name: Use a STABLE debug keystore (GitHub Secret preferred, committed file as fallback)
+        id: keystore_setup
+        env:
+          DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
+        run: |
+          mkdir -p ~/.android
+          if [ -n "$DEBUG_KEYSTORE_BASE64" ]; then
+            echo "Using debug.keystore from the DEBUG_KEYSTORE_BASE64 GitHub Secret (most robust source)."
+            echo "$DEBUG_KEYSTORE_BASE64" | base64 -d > ~/.android/debug.keystore
+          elif [ -f "debug.keystore" ]; then
+            echo "Using debug.keystore committed in the repo root."
+            cp debug.keystore ~/.android/debug.keystore
+          else
+            echo "::error::No debug.keystore found (no DEBUG_KEYSTORE_BASE64 secret and no committed debug.keystore)."
+            echo "::error::Refusing to silently generate a random one -- see LOCAL_DEV_SETUP.md."
+            exit 1
+          fi
+
+          echo ""
+          echo "===== DEBUG keystore fingerprint actually used to sign THIS build ====="
+          echo "(This is the DEBUG certificate. It is DIFFERENT from the RELEASE keystore"
+          echo " used for the Play Store build, and DIFFERENT again from the Google Play"
+          echo " App Signing certificate Google re-signs your release AAB with. Each of"
+          echo " the three needs its OWN SHA-1 registered in Firebase separately.)"
+          keytool -list -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey | grep -E "SHA1:|SHA256:"
+          SHA1=$(keytool -list -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey | grep "SHA1:" | sed "s/.*SHA1: //")
+          SHA256=$(keytool -list -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey | grep "SHA256:" | sed "s/.*SHA256: //")
+          echo "sha1=$SHA1" >> "$GITHUB_OUTPUT"
+          echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
+          echo "=========================================================================="
+
+          cp ~/.android/debug.keystore debug.keystore
+
+      - name: Upload debug.keystore (download this ONCE and commit it to the repo root permanently)
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-keystore-COMMIT-THIS-TO-REPO-ROOT
+          path: debug.keystore
+          if-no-files-found: warn
+
+      - name: Generate Android platform folder
+        run: flutter create --platforms=android --org com.wirdi --project-name wirdi .
+
+      - name: Patch AndroidManifest.xml
+        run: |
+          python3 patch_manifest.py
+
+      - name: Patch MainActivity for audio_service media notification
+        run: |
+          python3 patch_main_activity.py
+          echo "----- Resulting MainActivity.kt -----"
+          find android/app/src/main/kotlin -name MainActivity.kt -exec cat {} \;
+          echo "--------------------------------------"
+
+      - name: Create network_security_config.xml
+        run: |
+          mkdir -p android/app/src/main/res/xml
+          cp network_security_config.xml android/app/src/main/res/xml/network_security_config.xml
+
+      - name: Install real Adhan audio as a notification sound resource
+        run: |
+          mkdir -p android/app/src/main/res/raw
+          cp adhan_sound.mp3 android/app/src/main/res/raw/adhan_sound.mp3
+
+      - name: Patch Android Gradle for core library desugaring
+        run: |
+          python3 patch_gradle.py
+
+
+      - name: Setup Firebase (google-services.json + Gradle plugin)
+        run: |
+          # Copy google-services.json to android/app/
+          mkdir -p android/app
+          cp google-services.json android/app/google-services.json
+          echo "google-services.json copied"
+
+          # Patch build.gradle.kts to apply google-services plugin
+          python3 - <<'PY'
+          from pathlib import Path
+
+          # Classic buildscript-classpath + apply(plugin=...) style instead of
+          # the newer plugins-DSL id(...) style -- this works regardless of
+          # whether this Flutter version's template declares plugins via
+          # android/build.gradle.kts or android/settings.gradle.kts, since it
+          # never needs to find/edit an existing plugins {} block.
+          app_gradle = Path("android/app/build.gradle.kts")
+          if app_gradle.exists():
+              text = app_gradle.read_text()
+              if 'com.google.gms.google-services' not in text:
+                  text = text.rstrip() + '\n\napply(plugin = "com.google.gms.google-services")\n'
+                  app_gradle.write_text(text)
+                  print("Applied google-services plugin to app build.gradle.kts")
+
+          root_gradle = Path("android/build.gradle.kts")
+          if root_gradle.exists():
+              text = root_gradle.read_text()
+              if 'com.google.gms:google-services' not in text:
+                  if 'buildscript' in text and 'dependencies' in text:
+                      text = text.replace(
+                          'dependencies {',
+                          'dependencies {\n        classpath("com.google.gms:google-services:4.4.2")',
+                          1,
+                      )
+                  else:
+                      text = (
+                          'buildscript {\n'
+                          '    repositories {\n'
+                          '        google()\n'
+                          '        mavenCentral()\n'
+                          '    }\n'
+                          '    dependencies {\n'
+                          '        classpath("com.google.gms:google-services:4.4.2")\n'
+                          '    }\n'
+                          '}\n\n'
+                      ) + text
+                  root_gradle.write_text(text)
+                  print("Added google-services classpath to root build.gradle.kts")
+          else:
+              print("WARNING: android/build.gradle.kts not found -- classpath NOT added")
+          PY
+
+      - name: HARD GATE -- verify Google Sign-In configuration before building (DEBUG cert)
+        run: |
+          python3 scripts/verify_google_signin_config.py \
+            --google-services google-services.json \
+            --auth-service lib/core/services/auth_service.dart \
+            --package com.wirdi.wirdi \
+            --firebase-project wirdi-cb813 \
+            --build-type debug \
+            --keystore-sha1 "${{ steps.keystore_setup.outputs.sha1 }}" \
+            --keystore-sha256 "${{ steps.keystore_setup.outputs.sha256 }}"
+          # NOTE: PASS here only proves the DEBUG certificate matches Firebase.
+          # It does NOT prove Google Sign-In works at runtime, and it says
+          # NOTHING about the separate RELEASE or Google Play App Signing
+          # certificates -- those need their own SHA-1 registered in Firebase
+          # and are not validated by this step. See RELEASE_SIGNING_SETUP.md.
+
+
+
+      - name: Set app name in launcher
+        run: |
+          mkdir -p android/app/src/main/res/values
+          printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>' '<resources>' '    <string name="app_name">Wirdi</string>' '</resources>' > android/app/src/main/res/values/strings.xml
+
+      - name: Clear Flutter Cache
+        run: flutter pub cache clean --force || true
+
+      - name: Remove Old Lock File
+        run: rm -f pubspec.lock
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Show Dependencies
+        run: flutter pub deps
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wirdi-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+
+      - name: Check RELEASE signing secrets (skips release build gracefully if not configured yet -- never fails the job for this)
+        id: release_secrets
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          if [ -z "$RELEASE_KEYSTORE_BASE64" ] || [ -z "$RELEASE_KEYSTORE_PASSWORD" ] || [ -z "$RELEASE_KEY_ALIAS" ] || [ -z "$RELEASE_KEY_PASSWORD" ]; then
+            echo "::warning::Release signing secrets are not configured yet -- skipping the RELEASE build steps only. The debug APK above is unaffected. See RELEASE_SIGNING_SETUP.md in the repo root to enable release builds."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > release.keystore
+          cat > key.properties << EOF
+          storePassword=$RELEASE_KEYSTORE_PASSWORD
+          keyPassword=$RELEASE_KEY_PASSWORD
+          keyAlias=$RELEASE_KEY_ALIAS
+          storeFile=release.keystore
+          EOF
+          echo "Release keystore decoded from secret. Fingerprint shown below for diagnostics only (not a secret):"
+          keytool -list -v -keystore release.keystore -storepass "$RELEASE_KEYSTORE_PASSWORD" -alias "$RELEASE_KEY_ALIAS" | grep -E "SHA1:|SHA256:"
+          echo "present=true" >> "$GITHUB_OUTPUT"
+
+      - name: Build RELEASE App Bundle (for Play Store) + RELEASE APK (for direct testing)
+        if: steps.release_secrets.outputs.present == 'true'
+        run: |
+          flutter build appbundle --release
+          flutter build apk --release
+
+      - name: Upload release AAB (upload this exact file to Google Play Console)
+        if: steps.release_secrets.outputs.present == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: wirdi-release-aab-for-play-store
+          path: build/app/outputs/bundle/release/app-release.aab
+          if-no-files-found: warn
+
+      - name: Upload release APK (for testing the real release build directly on a device)
+        if: steps.release_secrets.outputs.present == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: wirdi-release-apk-for-testing
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: warn
+
