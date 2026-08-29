@@ -194,6 +194,21 @@ jobs:
       - name: Build debug APK
         run: flutter build apk --debug
 
+      - name: HARD GATE #2 -- verify the ACTUAL built APK's certificate (not just the keystore file)
+        run: |
+          APKSIGNER=$(find "$ANDROID_HOME" -name apksigner | sort -V | tail -1)
+          echo "Using apksigner at: $APKSIGNER"
+          "$APKSIGNER" verify --print-certs build/app/outputs/flutter-apk/app-debug.apk | tee apksigner_output.txt
+          REAL_SHA1=$(grep "Signer #1 certificate SHA-1" apksigner_output.txt | sed "s/.*: //" | tr -d ':' | tr 'a-f' 'A-F')
+          EXPECTED_SHA1=$(echo "${{ steps.keystore_setup.outputs.sha1 }}" | tr -d ':' | tr 'a-f' 'A-F')
+          echo "Real APK signing SHA-1 (no colons): $REAL_SHA1"
+          echo "Expected (from debug.keystore file): $EXPECTED_SHA1"
+          if [ "$REAL_SHA1" != "$EXPECTED_SHA1" ]; then
+            echo "::error::The ACTUAL built APK is signed with a DIFFERENT certificate than the debug.keystore file we copied in! This is the exact bug that caused Google Sign-In to fail for months. Failing the build instead of shipping a broken APK."
+            exit 1
+          fi
+          echo "CONFIRMED: the built APK's real signing certificate matches the intended debug.keystore."
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
