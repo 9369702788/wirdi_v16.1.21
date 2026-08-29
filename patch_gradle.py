@@ -20,9 +20,26 @@ if 'coreLibraryDesugaring(' not in text and 'coreLibraryDesugaring ' not in text
 path.write_text(text)
 print('Gradle patched')
 
+# ---- CRITICAL FIX (v91): the checks below used to test for the bare
+# substring 'signingConfigs' anywhere in the file. Flutter's own
+# DEFAULT generated build.gradle.kts template already contains the
+# line `signingConfig = signingConfigs.getByName("debug")` inside its
+# stock release buildType (a placeholder telling you to add real
+# signing later) -- so that substring check was ALWAYS true from the
+# moment `flutter create` ran, before this script ever touched the
+# file. Both the release AND the explicit debug signing blocks below
+# were silently skipped on every single build since this script was
+# introduced, meaning the "root cause fix" for Google Sign-In was
+# NEVER actually applied by CI. Checking for the literal block
+# declaration `signingConfigs {` instead of the bare word fixes this:
+# Flutter's placeholder line references signingConfigs.getByName(...)
+# but never declares `signingConfigs {` itself.
+def has_signing_configs_block(t):
+    return 'signingConfigs {' in t
+
 # ---- Release signing (added for Play Store submission) ----
 key_props_path = Path('key.properties')
-if key_props_path.exists() and 'signingConfigs' not in text:
+if key_props_path.exists() and not has_signing_configs_block(text):
     if is_kts:
         signing_block = (
             "\nval keystoreProperties = java.util.Properties()\n"
@@ -52,20 +69,12 @@ if key_props_path.exists() and 'signingConfigs' not in text:
     print('Release signingConfig wired up from key.properties')
 elif not key_props_path.exists():
     print('No key.properties found -- release build will remain unsigned/debug-signed for now')
-
+elif has_signing_configs_block(text):
+    print('A signingConfigs {} block already exists -- not overwriting it (release path)')
 
 # ---- ROOT CAUSE FIX (debug signing) ----
-# Proven via direct inspection of the installed APK's actual embedded
-# certificate (extracted from the APK Signing Block itself) that AGP's
-# implicit "$HOME/.android/debug.keystore" convention was NOT reliably
-# picking up our committed debug.keystore -- Gradle was silently
-# auto-generating a random, UNREGISTERED debug certificate on builds
-# instead, which is why Google Sign-In kept failing with
-# ApiException: 10 no matter how many times the Firebase-side
-# configuration was fixed. This block makes the debug signingConfig
-# EXPLICIT so there is zero ambiguity about which keystore file is used.
 debug_keystore_path = Path('debug.keystore')
-if debug_keystore_path.exists() and 'signingConfigs' not in text:
+if debug_keystore_path.exists() and not has_signing_configs_block(text):
     if is_kts:
         debug_signing_configs = (
             "    signingConfigs {\n"
@@ -97,7 +106,7 @@ if debug_keystore_path.exists() and 'signingConfigs' not in text:
         text = text.replace('    buildTypes {', debug_signing_configs + '    buildTypes {', 1)
     path.write_text(text)
     print('Explicit debug signingConfig wired up -- Gradle will now deterministically use the committed debug.keystore instead of guessing its location')
-elif 'signingConfigs' in text:
-    print('signingConfigs already present (release path) -- debug signing left to whatever release patching already wired up')
+elif has_signing_configs_block(text):
+    print('A signingConfigs {} block already exists (release path just added it, or one pre-existed) -- debug entry must be added manually inside it if not already covered')
 else:
     print('WARNING: debug.keystore not found at repo root -- explicit debug signingConfig NOT added')
