@@ -52,3 +52,52 @@ if key_props_path.exists() and 'signingConfigs' not in text:
     print('Release signingConfig wired up from key.properties')
 elif not key_props_path.exists():
     print('No key.properties found -- release build will remain unsigned/debug-signed for now')
+
+
+# ---- ROOT CAUSE FIX (debug signing) ----
+# Proven via direct inspection of the installed APK's actual embedded
+# certificate (extracted from the APK Signing Block itself) that AGP's
+# implicit "$HOME/.android/debug.keystore" convention was NOT reliably
+# picking up our committed debug.keystore -- Gradle was silently
+# auto-generating a random, UNREGISTERED debug certificate on builds
+# instead, which is why Google Sign-In kept failing with
+# ApiException: 10 no matter how many times the Firebase-side
+# configuration was fixed. This block makes the debug signingConfig
+# EXPLICIT so there is zero ambiguity about which keystore file is used.
+debug_keystore_path = Path('debug.keystore')
+if debug_keystore_path.exists() and 'signingConfigs' not in text:
+    if is_kts:
+        debug_signing_configs = (
+            "    signingConfigs {\n"
+            "        getByName(\"debug\") {\n"
+            "            storeFile = rootProject.file(\"../../debug.keystore\")\n"
+            "            storePassword = \"android\"\n"
+            "            keyAlias = \"androiddebugkey\"\n"
+            "            keyPassword = \"android\"\n"
+            "        }\n"
+            "    }\n"
+        )
+        text = text.replace('    buildTypes {', debug_signing_configs + '    buildTypes {', 1)
+        text = text.replace(
+            'getByName("debug") {',
+            'getByName("debug") {\n            signingConfig = signingConfigs.getByName("debug")',
+            1,
+        )
+    else:
+        debug_signing_configs = (
+            "    signingConfigs {\n"
+            "        debug {\n"
+            "            storeFile rootProject.file('../../debug.keystore')\n"
+            "            storePassword 'android'\n"
+            "            keyAlias 'androiddebugkey'\n"
+            "            keyPassword 'android'\n"
+            "        }\n"
+            "    }\n"
+        )
+        text = text.replace('    buildTypes {', debug_signing_configs + '    buildTypes {', 1)
+    path.write_text(text)
+    print('Explicit debug signingConfig wired up -- Gradle will now deterministically use the committed debug.keystore instead of guessing its location')
+elif 'signingConfigs' in text:
+    print('signingConfigs already present (release path) -- debug signing left to whatever release patching already wired up')
+else:
+    print('WARNING: debug.keystore not found at repo root -- explicit debug signingConfig NOT added')
