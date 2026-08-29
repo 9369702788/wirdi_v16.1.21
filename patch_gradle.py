@@ -22,10 +22,6 @@ print('Gradle patched')
 
 
 def find_block(haystack, anchor):
-    """Return (start, end) indices of the { ... } block that immediately
-    follows the first occurrence of `anchor`, using brace counting so
-    similarly-named sibling/nested blocks elsewhere in the file are
-    never confused for it."""
     idx = haystack.find(anchor)
     if idx == -1:
         return None
@@ -46,16 +42,6 @@ def find_block(haystack, anchor):
 
 
 def patch_within_block(full_text, block_anchor, target, replacement):
-    """v92 FIX: v91 used text.replace(target, ...) anywhere in the WHOLE
-    file to wire up buildTypes.debug/release signingConfig. On newer
-    AGP/Flutter templates that broke in CI with "Unresolved reference
-    'signingConfig'" because the file also had an unrelated block (e.g.
-    sourceSets { getByName("debug") { ... } }) containing the exact same
-    getByName("debug") { text, appearing earlier in the file, which has
-    no signingConfig property at all. This scopes the replacement to
-    ONLY the brace-matched contents of `block_anchor` (buildTypes {}),
-    so an identically-named block anywhere else in the file can never
-    be matched by mistake."""
     block = find_block(full_text, block_anchor)
     if block is None:
         return full_text, False
@@ -70,6 +56,16 @@ def patch_within_block(full_text, block_anchor, target, replacement):
 def has_signing_configs_block(t):
     return 'signingConfigs {' in t
 
+# ---- CRITICAL FIX (v93): PATH DEPTH. rootProject.file(x) resolves x
+# relative to the Gradle ROOT PROJECT directory (android/), NOT
+# android/app/ where this build.gradle.kts actually sits. v91/v92 used
+# "../../debug.keystore" and "../../key.properties" -- one level too
+# many. Proven by the real CI failure: "Keystore file
+# '.../work/wirdi_v16.1.21/debug.keystore' not found" -- exactly one
+# level above the checked-out repo root
+# (.../work/wirdi_v16.1.21/wirdi_v16.1.21/). Correct depth is ONE "../".
+REPO_ROOT_REL = "../"
+
 key_props_path = Path('key.properties')
 if key_props_path.exists() and not has_signing_configs_block(text):
     if is_kts:
@@ -80,7 +76,7 @@ if key_props_path.exists() and not has_signing_configs_block(text):
         )
         signing_block = (
             "\nval keystoreProperties = java.util.Properties()\n"
-            "val keystorePropertiesFile = rootProject.file(\"../../key.properties\")\n"
+            "val keystorePropertiesFile = rootProject.file(\"" + REPO_ROOT_REL + "key.properties\")\n"
             "if (keystorePropertiesFile.exists()) {\n"
             "    keystoreProperties.load(java.io.FileInputStream(keystorePropertiesFile))\n"
             "}\n"
@@ -91,7 +87,7 @@ if key_props_path.exists() and not has_signing_configs_block(text):
             "        create(\"release\") {\n"
             "            keyAlias = keystoreProperties.getProperty(\"keyAlias\")\n"
             "            keyPassword = keystoreProperties.getProperty(\"keyPassword\")\n"
-            "            storeFile = keystoreProperties.getProperty(\"storeFile\")?.let { rootProject.file(\"../../$it\") }\n"
+            "            storeFile = keystoreProperties.getProperty(\"storeFile\")?.let { rootProject.file(\"" + REPO_ROOT_REL + "$it\") }\n"
             "            storePassword = keystoreProperties.getProperty(\"storePassword\")\n"
             "        }\n"
             "    }\n"
@@ -118,7 +114,7 @@ if debug_keystore_path.exists() and not has_signing_configs_block(text):
         debug_signing_configs = (
             "    signingConfigs {\n"
             "        getByName(\"debug\") {\n"
-            "            storeFile = rootProject.file(\"../../debug.keystore\")\n"
+            "            storeFile = rootProject.file(\"" + REPO_ROOT_REL + "debug.keystore\")\n"
             "            storePassword = \"android\"\n"
             "            keyAlias = \"androiddebugkey\"\n"
             "            keyPassword = \"android\"\n"
@@ -130,7 +126,7 @@ if debug_keystore_path.exists() and not has_signing_configs_block(text):
         debug_signing_configs = (
             "    signingConfigs {\n"
             "        debug {\n"
-            "            storeFile rootProject.file('../../debug.keystore')\n"
+            "            storeFile rootProject.file('" + REPO_ROOT_REL + "debug.keystore')\n"
             "            storePassword 'android'\n"
             "            keyAlias 'androiddebugkey'\n"
             "            keyPassword 'android'\n"
@@ -138,7 +134,6 @@ if debug_keystore_path.exists() and not has_signing_configs_block(text):
             "    }\n"
         )
         text = text.replace('    buildTypes {', debug_signing_configs + '    buildTypes {', 1)
-        wired = True
     path.write_text(text)
     if wired:
         print('Explicit debug signingConfig wired up -- Gradle will now deterministically use the committed debug.keystore instead of guessing its location')
