@@ -207,7 +207,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // end user to see in Settings. Debug builds only now.
                 child: kDebugMode
                     ? const Text(
-                        'Merge build: v91-2026-08-29-critical-ci-fixes',
+                        'Merge build: v92-2026-08-29-scoped-gradle-patch',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                       )
