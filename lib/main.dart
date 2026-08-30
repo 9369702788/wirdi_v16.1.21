@@ -158,7 +158,7 @@ class WirdiApp extends StatelessWidget {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          theme: AppTheme.light, darkTheme: AppTheme.dark, themeMode: appSettings.themeMode,
+          theme: AppTheme.light(appSettings.colorTheme), darkTheme: AppTheme.dark(appSettings.colorTheme), themeMode: appSettings.themeMode,
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(context).copyWith(
               textScaler: TextScaler.linear(appSettings.fontScale)),

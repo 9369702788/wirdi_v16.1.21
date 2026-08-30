@@ -18,6 +18,10 @@ class _AccountScreenState extends State<AccountScreen> {
     try {
       await SyncService.instance.syncNow();
       setState(() { _ok = true; _msg = l.authSyncSuccess; });
+    } on FirestoreRulesNotPublishedException catch (e) {
+      // The single most actionable failure message this screen can
+      // show -- see FirestoreRulesNotPublishedException's doc comment.
+      setState(() { _ok = false; _msg = e.toString(); });
     } on PartialSyncException catch (e) {
       // Some sections failed but others succeeded -- tell the user
       // plainly instead of the previous behavior of either claiming

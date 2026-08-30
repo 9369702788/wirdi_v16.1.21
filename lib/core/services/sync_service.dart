@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -22,6 +23,20 @@ class PartialSyncException implements Exception {
   PartialSyncException(this.failedSections);
   @override
   String toString() => 'Sync completed with errors in: ${failedSections.join(", ")}';
+}
+
+/// Thrown when a sync attempt fails in the specific pattern that means
+/// Firestore's security rules were never actually Published on the live
+/// Firebase Console for this project (they exist only as documentation
+/// in FIRESTORE_RULES.md, which this app cannot deploy for you). This
+/// is the most common reason sync "does nothing at all" between two
+/// devices signed into the same account: every read AND write is
+/// rejected with permission-denied, so data never leaves either device.
+class FirestoreRulesNotPublishedException implements Exception {
+  @override
+  String toString() =>
+      'Cloud sync is blocked by Firestore security rules. Open the Firebase Console for this project, '
+      'go to Firestore Database > Rules, paste the rules from FIRESTORE_RULES.md, and click Publish.';
 }
 
 class SyncService {
@@ -195,21 +210,72 @@ class SyncService {
   /// Reads the 'settings' document's server-written updatedAt as a proxy
   /// for cloud data freshness overall -- uploadAll() writes it in the
   /// same section as everything else.
+  /// True after the most recent [_reconcile] call if reading the cloud
+  /// freshness marker failed for a reason worth surfacing to the user
+  /// (most importantly: a Firestore permission-denied error, which
+  /// almost always means the security rules documented in
+  /// FIRESTORE_RULES.md were never actually pasted into and Published
+  /// on the live Firebase Console -- that markdown file is
+  /// documentation only, publishing it is a manual one-time step this
+  /// code cannot do for you). Previously this failure was logged
+  /// internally and then silently treated exactly like "the cloud has
+  /// no data yet", so a fully-blocked Firestore project looked
+  /// identical to a brand-new empty one: every sync would silently
+  /// fall through to uploadAll(), which ALSO fails permission-denied
+  /// (and gets correctly collected into a PartialSyncException) -- but
+  /// nothing ever pointed specifically at "your Firestore rules are not
+  /// published" as the likely root cause.
+  bool lastReconcileHadPermissionError = false;
+
   Future<DateTime?> _cloudLastUpdated() async {
     if (_uid == null) return null;
     try {
       final snap = await _doc('settings').get();
       final ts = snap.data()?['updatedAt'];
       if (ts is Timestamp) return ts.toDate();
+    } on FirebaseException catch (e, st) {
+      if (e.code == 'permission-denied') {
+        lastReconcileHadPermissionError = true;
+      }
+      AppLogger.error('Failed to read cloud updatedAt (code: ${e.code})', error: e, stackTrace: st);
     } catch (e, st) {
       AppLogger.error('Failed to read cloud updatedAt', error: e, stackTrace: st);
     }
     return null;
   }
 
+  /// ROOT CAUSE FIX (v100): this used to store DateTime.now() -- the
+  /// DEVICE's own local wall clock -- as "when this device last
+  /// synced", and then compare that directly against [_cloudLastUpdated],
+  /// which is a FIRESTORE SERVER timestamp. Those are two different
+  /// clock domains. If a device's local clock is off from real time by
+  /// even a few minutes (wrong timezone, wrong date, clock drift -- all
+  /// common, especially on test devices), the comparison in
+  /// [_reconcileImpl] silently stops making sense: a device whose clock
+  /// reads "ahead" of the server will conclude the cloud can never be
+  /// newer than its own last-synced marker ever again, so it always
+  /// takes the upload branch and never downloads -- even when the
+  /// cloud genuinely has newer data from the other device. This exactly
+  /// matches "sync reports success on both devices, but nothing ever
+  /// actually moves between them."
+  ///
+  /// Fix: never store a device-local timestamp for this comparison at
+  /// all. Instead, immediately re-read the cloud's own timestamp right
+  /// after a successful upload/download and store THAT -- so both sides
+  /// of the freshness comparison always come from the same clock
+  /// (Firestore's server time), and device clock skew can no longer
+  /// affect the decision.
   Future<void> _markLocalSynced() async {
+    final confirmedCloudTime = await _cloudLastUpdated();
+    if (confirmedCloudTime == null) {
+      // Could not confirm the cloud's timestamp right now (e.g. a
+      // transient network blip immediately after a successful sync) --
+      // leave the previous marker in place rather than clearing it or
+      // writing something unreliable.
+      return;
+    }
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_localLastSyncedKey, DateTime.now().millisecondsSinceEpoch);
+    await prefs.setInt(_localLastSyncedKey, confirmedCloudTime.millisecondsSinceEpoch);
   }
 
   /// ROOT CAUSE FIX (v96): this used to be the ONLY place that ever
@@ -235,7 +301,40 @@ class SyncService {
   /// on the losing side of a comparison can still be overwritten -- but
   /// it fixes the much bigger, actively-breaking bug where cross-device
   /// sync could never receive updates via normal app usage at all.
+  /// GUARD (v99): nothing previously stopped multiple overlapping
+  /// _reconcile() calls from running concurrently -- e.g. rapid
+  /// lock/unlock cycles during testing each fire
+  /// didChangeAppLifecycleState(resumed) in root_shell.dart, and each
+  /// one called syncNow() with no check for a sync already in
+  /// progress. Concurrent reconciles can each read a similar "cloud
+  /// freshness" snapshot and then independently decide to upload,
+  /// multiplying writes without any of them being individually wrong --
+  /// consistent with the very high write-to-read ratio observed in the
+  /// real Firestore usage graphs. This makes a second concurrent call
+  /// simply wait for the first one to finish and then return, instead
+  /// of starting a fully independent second reconcile.
+  Future<void>? _inFlightReconcile;
+
   Future<void> _reconcile() async {
+    if (_inFlightReconcile != null) {
+      debugPrint('[SyncService] _reconcile() already in progress -- awaiting the existing call instead of starting a new one.');
+      return _inFlightReconcile!;
+    }
+    final completer = Completer<void>();
+    _inFlightReconcile = completer.future;
+    try {
+      await _reconcileImpl();
+      completer.complete();
+    } catch (e, st) {
+      completer.completeError(e, st);
+      rethrow;
+    } finally {
+      _inFlightReconcile = null;
+    }
+  }
+
+  Future<void> _reconcileImpl() async {
+    lastReconcileHadPermissionError = false;
     final cloudUpdatedAt = await _cloudLastUpdated();
     final prefs = await SharedPreferences.getInstance();
     final localLastSyncedMs = prefs.getInt(_localLastSyncedKey);
@@ -243,10 +342,23 @@ class SyncService {
     final cloudIsNewer = cloudUpdatedAt != null &&
         (localLastSyncedMs == null || cloudUpdatedAt.millisecondsSinceEpoch > localLastSyncedMs);
 
-    if (cloudIsNewer) {
-      await downloadAll();
-    } else {
-      await uploadAll();
+    try {
+      if (cloudIsNewer) {
+        await downloadAll();
+      } else {
+        await uploadAll();
+      }
+    } on PartialSyncException {
+      // Every section failing AND the freshness check having already
+      // hit permission-denied is the unambiguous "Firestore rules were
+      // never published" signature -- surface it as its own exception
+      // so the UI can show one clear, actionable message instead of a
+      // generic "partially failed: settings, quran_progress, ...".
+      if (lastReconcileHadPermissionError) {
+        await _markLocalSynced();
+        throw FirestoreRulesNotPublishedException();
+      }
+      rethrow;
     }
     await _markLocalSynced();
   }

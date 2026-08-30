@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../theme/app_theme.dart';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -46,6 +47,7 @@ class DailyReminderSetting {
 
 class AppSettings extends ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.system;
+  AppColorTheme _colorTheme = AppColorTheme.emerald;
   double _fontScale = 1.0;
   String _reciterId = 'ar.alafasy';
   bool _loaded = false;
@@ -147,6 +149,12 @@ class AppSettings extends ChangeNotifier {
       'dark' => ThemeMode.dark,
       _ => ThemeMode.system,
     };
+
+    final storedColorTheme = prefs.getString('settings_color_theme');
+    _colorTheme = AppColorTheme.values.firstWhere(
+      (t) => t.name == storedColorTheme,
+      orElse: () => AppColorTheme.emerald,
+    );
 
     _fontScale = prefs.getDouble('settings_font_scale') ?? 1.0;
     _reciterId = prefs.getString('settings_reciter_id') ?? 'ar.alafasy';
@@ -285,6 +293,15 @@ class AppSettings extends ChangeNotifier {
       ThemeMode.dark => 'dark',
       ThemeMode.system => 'system',
     });
+  }
+
+  AppColorTheme get colorTheme => _colorTheme;
+
+  Future<void> setColorTheme(AppColorTheme theme) async {
+    _colorTheme = theme;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('settings_color_theme', theme.name);
   }
 
   Future<void> setFontScale(double scale) async {

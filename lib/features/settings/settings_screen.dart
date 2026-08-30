@@ -207,7 +207,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // end user to see in Settings. Debug builds only now.
                 child: kDebugMode
                     ? const Text(
-                        'Merge build: v97-2026-08-30-fix-registration-validation',
+                        'Merge build: v104-2026-08-30-reliable-radio-sources',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                       )
@@ -292,6 +292,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           // fit reliably across all supported languages.
                           selected: {appSettings.themeMode},
                           onSelectionChanged: (set) => appSettings.setThemeMode(set.first),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      // Color theme picker: a row of tappable swatches, one per
+                      // AppColorTheme, each showing that theme's primary+accent
+                      // colors. The selected one gets a check mark and a ring
+                      // border. Works independently of light/dark/auto above --
+                      // e.g. "Ocean + Dark" and "Ruby + Light" are both valid
+                      // combinations.
+                      const Text('لون التطبيق', style: TextStyle(fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        height: 76,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: AppColorTheme.values.map((t) {
+                            final def = AppTheme.definitions[t]!;
+                            final isSelected = appSettings.colorTheme == t;
+                            return Padding(
+                              padding: const EdgeInsets.only(left: 10),
+                              child: GestureDetector(
+                                onTap: () => appSettings.setColorTheme(t),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      width: 48,
+                                      height: 48,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        gradient: LinearGradient(
+                                          colors: [def.primary, def.accent],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        border: Border.all(
+                                          color: isSelected ? def.primary : Colors.transparent,
+                                          width: 3,
+                                        ),
+                                        boxShadow: isSelected
+                                            ? [BoxShadow(color: def.primary.withValues(alpha: 0.4), blurRadius: 8, spreadRadius: 1)]
+                                            : null,
+                                      ),
+                                      child: isSelected
+                                          ? const Icon(Icons.check_rounded, color: Colors.white, size: 22)
+                                          : null,
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(def.displayName, style: const TextStyle(fontSize: 10)),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
                         ),
                       ),
                       const SizedBox(height: 20),

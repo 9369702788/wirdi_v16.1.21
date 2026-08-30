@@ -1,6 +1,24 @@
 import 'package:flutter/material.dart';
 
 /// Wirdi design tokens, per the Premium UI/UX Specification brief.
+///
+/// IMPORTANT: these stay literal `static const` emerald/gold values,
+/// deliberately UNCHANGED, even after [AppColorTheme] was added below.
+/// ~240 call sites across ~38 other screens reference
+/// AppColors.primaryEmerald / AppColors.goldAccent directly (not via
+/// Theme.of(context)) -- changing these into theme-aware values would
+/// either require touching every one of those call sites (a large,
+/// separate refactor outside this session's scope, right before a
+/// release) or silently break every `const Widget(color:
+/// AppColors.xyz)` usage among them (Dart requires const values in
+/// const contexts). Those specific screens will keep their original
+/// emerald/gold accents regardless of the selected [AppColorTheme]
+/// until a dedicated follow-up pass updates them to read from
+/// Theme.of(context).colorScheme instead. The core app chrome (AppBar,
+/// Scaffold background, default Card shape/color, buttons, bottom nav,
+/// and any Material3 widget that reads ColorScheme automatically) DOES
+/// already fully respond to the selected theme, since MaterialApp's
+/// `theme`/`darkTheme` are now built from [AppColorTheme] below.
 class AppColors {
   AppColors._();
 
@@ -18,28 +36,115 @@ class AppColors {
   static const tajweedIqlab = Color(0xFF8E24AA);
 }
 
+/// The set of selectable app-wide color themes. `emerald` reproduces
+/// the app's original look exactly (same values as [AppColors]) so
+/// existing users see zero visual change unless they deliberately pick
+/// a different theme.
+enum AppColorTheme { emerald, ocean, ruby, amethyst, manuscript }
+
+/// One theme's full visual identity: colors, card shape, and
+/// (optionally) a distinct font family. [fontFamily] is null for most
+/// themes (falls back to the platform default font, exactly like the
+/// app's original 'Cairo' reference already did -- no 'Cairo' font
+/// asset is actually bundled in pubspec.yaml, so that name was already
+/// a no-op). `manuscript` deliberately reuses the already-bundled
+/// 'AmiriQuran' font asset (declared in pubspec.yaml for Quran text)
+/// for a distinct classic/calligraphic feel -- no new font asset is
+/// introduced, avoiding any packaging/licensing risk right before a
+/// release build.
+class AppThemeDefinition {
+  final String displayName;
+  final Color primary;
+  final Color accent;
+  final Color lightBackground;
+  final Color darkBackground;
+  final Color darkCard;
+  final double cardRadius;
+  final String? fontFamily;
+  const AppThemeDefinition({
+    required this.displayName,
+    required this.primary,
+    required this.accent,
+    required this.lightBackground,
+    required this.darkBackground,
+    required this.darkCard,
+    required this.cardRadius,
+    this.fontFamily,
+  });
+}
+
 class AppTheme {
   AppTheme._();
 
-  static ThemeData get light {
+  static const Map<AppColorTheme, AppThemeDefinition> definitions = {
+    AppColorTheme.emerald: AppThemeDefinition(
+      displayName: 'زمردي',
+      primary: Color(0xFF0F766E),
+      accent: Color(0xFFD4AF37),
+      lightBackground: Color(0xFFF8FAF6),
+      darkBackground: Color(0xFF071A17),
+      darkCard: Color(0xFF102925),
+      cardRadius: 20,
+    ),
+    AppColorTheme.ocean: AppThemeDefinition(
+      displayName: 'محيطي',
+      primary: Color(0xFF0369A1),
+      accent: Color(0xFF06B6D4),
+      lightBackground: Color(0xFFF4FAFD),
+      darkBackground: Color(0xFF071A24),
+      darkCard: Color(0xFF0E293A),
+      cardRadius: 16,
+    ),
+    AppColorTheme.ruby: AppThemeDefinition(
+      displayName: 'ياقوتي',
+      primary: Color(0xFF9F1239),
+      accent: Color(0xFFF59E0B),
+      lightBackground: Color(0xFFFDF6F6),
+      darkBackground: Color(0xFF240A11),
+      darkCard: Color(0xFF3A121B),
+      cardRadius: 24,
+    ),
+    AppColorTheme.amethyst: AppThemeDefinition(
+      displayName: 'بنفسجي',
+      primary: Color(0xFF6D28D9),
+      accent: Color(0xFFF472B6),
+      lightBackground: Color(0xFFF9F7FD),
+      darkBackground: Color(0xFF1A1330),
+      darkCard: Color(0xFF271C42),
+      cardRadius: 20,
+    ),
+    AppColorTheme.manuscript: AppThemeDefinition(
+      displayName: 'مخطوطة كلاسيكية',
+      primary: Color(0xFF92400E),
+      accent: Color(0xFFD4AF37),
+      lightBackground: Color(0xFFFBF6EC),
+      darkBackground: Color(0xFF1C140B),
+      darkCard: Color(0xFF2B2013),
+      cardRadius: 8,
+      fontFamily: 'AmiriQuran',
+    ),
+  };
+
+  static ThemeData light(AppColorTheme theme) {
+    final def = definitions[theme]!;
     final base = ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primaryEmerald,
+        seedColor: def.primary,
         brightness: Brightness.light,
-        primary: AppColors.primaryEmerald,
-        secondary: AppColors.goldAccent,
+        primary: def.primary,
+        secondary: def.accent,
         surface: Colors.white,
       ),
-      scaffoldBackgroundColor: AppColors.lightBackground,
-      fontFamily: 'Cairo',
+      scaffoldBackgroundColor: def.lightBackground,
+      fontFamily: def.fontFamily ?? 'Cairo',
     );
 
     return base.copyWith(
       appBarTheme: base.appBarTheme.copyWith(
-        backgroundColor: AppColors.lightBackground,
-        foregroundColor: AppColors.primaryEmerald,
+        backgroundColor: def.lightBackground,
+        foregroundColor: def.primary,
         elevation: 0,
         centerTitle: true,
       ),
@@ -47,23 +152,23 @@ class AppTheme {
         color: Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(def.cardRadius),
         ),
       ),
       textTheme: base.textTheme.apply(
         bodyColor: const Color(0xFF102925),
         displayColor: const Color(0xFF102925),
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: Colors.white,
-        selectedItemColor: AppColors.primaryEmerald,
+        selectedItemColor: def.primary,
         unselectedItemColor: AppColors.mutedText,
         type: BottomNavigationBarType.fixed,
         showUnselectedLabels: true,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryEmerald,
+          backgroundColor: def.primary,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           shape: RoundedRectangleBorder(
@@ -75,46 +180,47 @@ class AppTheme {
     );
   }
 
-  static ThemeData get dark {
+  static ThemeData dark(AppColorTheme theme) {
+    final def = definitions[theme]!;
     final base = ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primaryEmerald,
+        seedColor: def.primary,
         brightness: Brightness.dark,
-        primary: AppColors.goldAccent,
-        secondary: AppColors.primaryEmerald,
-        surface: AppColors.darkCard,
+        primary: def.accent,
+        secondary: def.primary,
+        surface: def.darkCard,
       ),
-      scaffoldBackgroundColor: AppColors.darkBackground,
-      fontFamily: 'Cairo',
+      scaffoldBackgroundColor: def.darkBackground,
+      fontFamily: def.fontFamily ?? 'Cairo',
     );
 
     return base.copyWith(
       appBarTheme: base.appBarTheme.copyWith(
-        backgroundColor: AppColors.darkBackground,
-        foregroundColor: AppColors.goldAccent,
+        backgroundColor: def.darkBackground,
+        foregroundColor: def.accent,
         elevation: 0,
         centerTitle: true,
       ),
       cardTheme: base.cardTheme.copyWith(
-        color: AppColors.darkCard,
+        color: def.darkCard,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(def.cardRadius),
         ),
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: AppColors.darkCard,
-        selectedItemColor: AppColors.goldAccent,
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: def.darkCard,
+        selectedItemColor: def.accent,
         unselectedItemColor: Colors.white54,
         type: BottomNavigationBarType.fixed,
         showUnselectedLabels: true,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.goldAccent,
-          foregroundColor: AppColors.darkBackground,
+          backgroundColor: def.accent,
+          foregroundColor: def.darkBackground,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),

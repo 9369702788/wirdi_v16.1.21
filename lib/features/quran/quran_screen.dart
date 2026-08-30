@@ -803,7 +803,29 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
     }
   }
 
+  /// DISABLED (pre-launch compliance fix): the underlying data source
+  /// (AppSources.tafsirJsonUrl, a personal GitHub mirror with no clear
+  /// redistribution license for Tafsir Al-Muyassar text) does not meet
+  /// this project's own "Legal, Privacy, Store Readiness" requirement
+  /// of a clearly-licensed source before shipping. Rather than remove
+  /// the feature's code entirely, this short-circuits it with a clear
+  /// "not available yet" message -- no network request is made and no
+  /// unlicensed text is ever fetched or displayed. Re-enable by
+  /// reverting this early return once a properly licensed Tafsir
+  /// source is confirmed (see AppSources.tafsirJsonUrl's doc comment).
   Future<void> _toggleTafsir(int ayahNumber) async {
+    if (mounted) {
+      final l10n = AppLocalizations.of(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.quranTafsirLoadError),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+    return;
+
+    // ignore: dead_code
     if (_expandedTafsirAyahs.contains(ayahNumber)) {
       setState(() => _expandedTafsirAyahs.remove(ayahNumber));
       return;

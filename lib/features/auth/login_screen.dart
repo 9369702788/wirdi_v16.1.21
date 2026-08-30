@@ -9,6 +9,11 @@ import 'forgot_password_screen.dart';
 
 final RegExp _kEmailRegex = RegExp(r'^[\w\.\-\+]+@[\w\-]+(\.[\w\-]+)*\.[a-zA-Z]{2,}$');
 
+/// Sentinel thrown when the email/password Form fails client-side
+/// validation inside a [_go]-wrapped action -- see [_go]'s doc comment
+/// for why this exists and what bug it closes.
+class _ValidationFailedSilently implements Exception {}
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
   @override State<LoginScreen> createState() => _LoginScreenState();
@@ -21,9 +26,26 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _error;
   @override void dispose() { _emailCtrl.dispose(); _passCtrl.dispose(); super.dispose(); }
 
+  /// FIX: [_go] used to navigate to /home unconditionally as soon as
+  /// [fn] completed WITHOUT throwing -- but the email/password sign-in
+  /// button's [fn] used `if (!_formKey.currentState!.validate()) return;`
+  /// to bail out on an invalid form. A plain `return` completes the
+  /// Future normally (no exception), which [_go] could not distinguish
+  /// from "sign-in actually succeeded" -- so it navigated straight to
+  /// /home with NO account signed in at all. That is the real
+  /// mechanism behind "any email and any password gets in": the app
+  /// was never actually validating the credentials against Firebase in
+  /// that case, it was just always letting you through on a failed
+  /// client-side form check. [_ValidationFailedSilently] is a sentinel
+  /// exception so a failed form validation is now treated exactly like
+  /// any other failure -- it stops here and does not navigate -- while
+  /// still not showing a redundant top-level error banner, since the
+  /// per-field red messages the Form itself renders already explain
+  /// what's wrong.
   Future<void> _go(Future<void> Function() fn) async {
     setState(() { _loading = true; _error = null; });
     try { await fn(); if (mounted) Navigator.pushReplacementNamed(context, '/home'); }
+    on _ValidationFailedSilently { /* per-field red errors are already visible; do not navigate */ }
     on FirebaseAuthException catch (e) { setState(() { _error = _msg(e.code); }); }
     catch (e) { setState(() { _error = e.toString(); }); }
     finally { if (mounted) setState(() => _loading = false); }
@@ -89,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
         FilledButton(
           style: FilledButton.styleFrom(backgroundColor: AppColors.goldAccent, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
           onPressed: _loading ? null : () => _go(() async {
-            if (!_formKey.currentState!.validate()) return;
+            if (!_formKey.currentState!.validate()) throw _ValidationFailedSilently();
             await AuthService.instance.signInWithEmail(_emailCtrl.text.trim(), _passCtrl.text);
             await SyncService.instance.syncOnSignIn();
           }),

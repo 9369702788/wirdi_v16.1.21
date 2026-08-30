@@ -12,7 +12,7 @@ import 'playback_coordinator.dart';
 enum RadioState { stopped, loading, playing, error }
 
 /// Which source is currently serving the station list.
-enum RadioSource { embedded, dataRosy, uthumany, fallback }
+enum RadioSource { embedded, mp3quran, radioBrowser, dataRosy, uthumany, fallback }
 
 class RadioService extends ChangeNotifier {
   RadioService._();
@@ -80,35 +80,145 @@ class RadioService extends ChangeNotifier {
   // ── Background API refresh ────────────────────────────────────────────────
   void _refreshFromApiInBackground() {
     // Fire and forget — does NOT block init or the UI
-    Future.microtask(() async {
-      _loadingLive = true;
+    Future.microtask(_doRefresh);
+  }
+
+  Future<void> refreshStations() => _doRefresh();
+
+  /// ROOT CAUSE FIX (v104): the previous priority order tried two
+  /// unofficial personal mirrors first (a Vercel-hosted personal
+  /// project and a raw-GitHub personal fork), with mp3quran.net -- a
+  /// real, documented, verified public API -- only ever used to MERGE
+  /// a few extra stations on top of whichever mirror happened to
+  /// respond. Personal mirrors can disappear or go stale with no
+  /// warning. New priority: try the two independently-run, documented
+  /// public APIs (mp3quran.net, then Radio-Browser) FIRST as full
+  /// primary station lists, merging the other one's results in on
+  /// success for variety; only fall back to the older personal mirrors
+  /// if BOTH real APIs fail entirely. This was NOT verified against
+  /// live network responses (no internet access in the environment
+  /// that authored this fix) -- please confirm real playback still
+  /// works end-to-end on a real device/build.
+  Future<void> _doRefresh() async {
+    _loadingLive = true;
+    notifyListeners();
+
+    if (await _tryMp3Quran()) {
+      await _mergeRadioBrowser();
+      _loadingLive = false;
       notifyListeners();
-      if (await _tryDataRosy()) {
-        await _mergeMp3Quran();
-        _loadingLive = false;
-        notifyListeners();
-        return;
-      }
-      if (await _tryUthumany()) {
-        await _mergeMp3Quran();
-        _loadingLive = false;
-        notifyListeners();
-        return;
-      }
+      return;
+    }
+    if (await _tryRadioBrowser()) {
       await _mergeMp3Quran();
       _loadingLive = false;
       notifyListeners();
-    });
-  }
-
-  Future<void> refreshStations() async {
-    _loadingLive = true;
-    notifyListeners();
-    if (await _tryDataRosy()) { await _mergeMp3Quran(); _loadingLive = false; notifyListeners(); return; }
-    if (await _tryUthumany()) { await _mergeMp3Quran(); _loadingLive = false; notifyListeners(); return; }
+      return;
+    }
+    // Both documented public APIs failed -- fall back to the older
+    // personal mirrors, same as before this fix.
+    if (await _tryDataRosy()) {
+      await _mergeMp3Quran();
+      _loadingLive = false;
+      notifyListeners();
+      return;
+    }
+    if (await _tryUthumany()) {
+      await _mergeMp3Quran();
+      _loadingLive = false;
+      notifyListeners();
+      return;
+    }
     await _mergeMp3Quran();
     _loadingLive = false;
     notifyListeners();
+  }
+
+  /// Full-list variant of mp3quran.net (was previously only used via
+  /// [_mergeMp3Quran] to add a few extra stations on top of another
+  /// source). https://mp3quran.net/api/v3/radios is a real, documented,
+  /// verified public API for Quran radio stations.
+  Future<bool> _tryMp3Quran() async {
+    try {
+      final resp = await http
+          .get(Uri.parse('https://mp3quran.net/api/v3/radios?language=ar'))
+          .timeout(const Duration(seconds: 10));
+      if (resp.statusCode != 200) return false;
+      final decoded = jsonDecode(resp.body) as Map<String, dynamic>;
+      final radios = decoded['radios'] as List<dynamic>? ?? const [];
+      final stations = radios
+          .whereType<Map<String, dynamic>>()
+          .map(RadioStation.fromMp3Quran)
+          .where((s) => s.streamUrl.isNotEmpty)
+          .toList();
+      if (stations.isEmpty) return false;
+      _liveStations = stations;
+      _activeSource = RadioSource.mp3quran;
+      _sourceLabel = stations.length.toString() + ' stations from mp3quran.net';
+      debugPrint('[Radio] Refreshed ' + stations.length.toString() + ' stations from mp3quran.net (primary)');
+      return true;
+    } catch (e) {
+      debugPrint('[Radio] mp3quran.net (primary) error: ' + e.toString());
+      return false;
+    }
+  }
+
+  /// Radio-Browser (https://www.radio-browser.info) -- a large,
+  /// community-maintained, genuinely open radio station directory with
+  /// a documented public API. Their usage policy asks for a
+  /// descriptive User-Agent identifying the app, which is set below.
+  /// Searches by tag=quran; NOT verified against a live response in
+  /// this environment (no network access here) -- please confirm real
+  /// playback works on a real device/build.
+  Future<bool> _tryRadioBrowser() async {
+    try {
+      final resp = await http.get(
+        Uri.parse('https://de1.api.radio-browser.info/json/stations/bytag/quran?limit=100&hidebroken=true'),
+        headers: {'User-Agent': 'WirdiApp/1.52 (Islamic companion app)'},
+      ).timeout(const Duration(seconds: 10));
+      if (resp.statusCode != 200) return false;
+      final List<dynamic> data = jsonDecode(resp.body);
+      final stations = data
+          .whereType<Map<String, dynamic>>()
+          .map(RadioStation.fromRadioBrowser)
+          .where((s) => s.streamUrl.isNotEmpty)
+          .toList();
+      if (stations.isEmpty) return false;
+      _liveStations = stations;
+      _activeSource = RadioSource.radioBrowser;
+      _sourceLabel = stations.length.toString() + ' stations from Radio-Browser';
+      debugPrint('[Radio] Refreshed ' + stations.length.toString() + ' stations from Radio-Browser (primary)');
+      return true;
+    } catch (e) {
+      debugPrint('[Radio] Radio-Browser (primary) error: ' + e.toString());
+      return false;
+    }
+  }
+
+  /// Merge-only variant of [_tryRadioBrowser] -- adds any NEW stations
+  /// (deduplicated by stream URL) on top of whichever source is
+  /// currently the primary list, same pattern as [_mergeMp3Quran].
+  Future<void> _mergeRadioBrowser() async {
+    try {
+      final resp = await http.get(
+        Uri.parse('https://de1.api.radio-browser.info/json/stations/bytag/quran?limit=100&hidebroken=true'),
+        headers: {'User-Agent': 'WirdiApp/1.52 (Islamic companion app)'},
+      ).timeout(const Duration(seconds: 10));
+      if (resp.statusCode != 200) return;
+      final List<dynamic> data = jsonDecode(resp.body);
+      final existingUrls = _liveStations.map((s) => s.streamUrl).toSet();
+      final newStations = data
+          .whereType<Map<String, dynamic>>()
+          .map(RadioStation.fromRadioBrowser)
+          .where((s) => s.streamUrl.isNotEmpty && !existingUrls.contains(s.streamUrl))
+          .toList();
+      if (newStations.isEmpty) return;
+      _liveStations = [..._liveStations, ...newStations];
+      _sourceLabel = _sourceLabel + ' + ' + newStations.length.toString() + ' from Radio-Browser';
+      debugPrint('[Radio] Merged ' + newStations.length.toString() + ' extra stations from Radio-Browser');
+    } catch (e) {
+      debugPrint('[Radio] Radio-Browser merge error: ' + e.toString());
+    }
   }
 
   /// Fetches Quran radio stations from mp3quran.net (a real, verified
