@@ -11,6 +11,18 @@ class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
   @override State<RegisterScreen> createState() => _RegisterScreenState();
 }
+/// True only if [v] is at least 8 characters AND contains at least one
+/// letter AND at least one digit. Deliberately does not require a
+/// symbol/uppercase -- the goal is closing the "any 6 identical
+/// characters passes" gap, not maximal strictness that would frustrate
+/// real users right before launch.
+bool _validatePassword(String? v) {
+  if (v == null || v.length < 8) return false;
+  final hasLetter = RegExp(r'[A-Za-z]').hasMatch(v);
+  final hasDigit = RegExp(r'[0-9]').hasMatch(v);
+  return hasLetter && hasDigit;
+}
+
 class _RegisterScreenState extends State<RegisterScreen> {
   final _fk = GlobalKey<FormState>();
   final _nc = TextEditingController(), _ec = TextEditingController(), _pc = TextEditingController();
@@ -37,7 +49,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           backgroundColor: Colors.green.shade800,
           duration: const Duration(seconds: 6),
-          content: Text('Account created. Firebase UID: \${user.uid}\nEmail: \${user.email}'),
+          content: Text('Account created. Firebase UID: \${user.uid}\nEmail: \${user.email}\nA verification link was sent to your email -- please confirm it.'),
         ));
       }
 
@@ -101,7 +113,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 14),
             _Fld(ctrl: _pc, label: l.authPassword, icon: Icons.lock_outline, obscure: _obscure,
               suffixIcon: IconButton(icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: Colors.white70), onPressed: () => setState(() => _obscure = !_obscure)),
-              validator: (v) => (v==null||v.length<6) ? l.authPasswordTooShort : null),
+              // FIX: was "length >= 6" only, which accepted things like
+              // "111111" or "aaaaaa" -- functionally "any password" as
+              // far as real-world security goes. Now requires 8+
+              // characters AND at least one letter AND at least one
+              // digit. Reuses the existing l.authPasswordTooShort string
+              // for every failure case (deliberately, to avoid adding a
+              // new localization key that would need translating into
+              // all 7 supported languages right before a release build;
+              // the validation itself is what changed, not just its
+              // wording).
+              validator: (v) => _validatePassword(v) ? null : l.authPasswordTooShort),
             const SizedBox(height: 24),
             FilledButton(
               style: FilledButton.styleFrom(backgroundColor: AppColors.goldAccent, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),

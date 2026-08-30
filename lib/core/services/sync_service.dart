@@ -212,15 +212,30 @@ class SyncService {
     await prefs.setInt(_localLastSyncedKey, DateTime.now().millisecondsSinceEpoch);
   }
 
-  /// Was previously unconditional download-then-upload, which meant THIS
-  /// device's local state always won immediately after sign-in -- even if
-  /// empty/stale -- silently erasing a second device's cloud data. Now:
-  /// only download (let cloud win) when the cloud was updated more
-  /// recently than the last time THIS device synced; otherwise this
-  /// device's data is at least as current, so push it up instead. Not a
-  /// full per-field merge, but it removes the most damaging concrete
-  /// scenario (signing in on a new device wiping another device's data).
-  Future<void> syncOnSignIn() async {
+  /// ROOT CAUSE FIX (v96): this used to be the ONLY place that ever
+  /// downloaded from the cloud -- it only ran once, at sign-in time.
+  /// Every other sync trigger in the app (the manual "Sync Now" button
+  /// in account_screen.dart, AND the automatic sync fired from
+  /// root_shell.dart on every app open) called syncNow(), which was a
+  /// blind upload-only operation. That meant: every time EITHER device
+  /// was simply opened, it silently overwrote the cloud with its own
+  /// local state regardless of whether the cloud actually had newer
+  /// data from the OTHER device -- so whichever device was opened most
+  /// recently always "won", and the other device could never receive
+  /// updates at all. That is the exact "sync doesn't work between two
+  /// devices" symptom. Fix: extract the freshness check into a shared
+  /// [_reconcile] method and have BOTH syncOnSignIn() and syncNow() use
+  /// it, so every sync trigger in the app -- automatic or manual --
+  /// actually checks whether the cloud has newer data before deciding
+  /// to push local data over it, instead of only the one-time
+  /// sign-in path doing that check.
+  ///
+  /// This is still a whole-document/whole-sync freshness comparison,
+  /// not a true per-field merge, so a local edit made after a sync but
+  /// on the losing side of a comparison can still be overwritten -- but
+  /// it fixes the much bigger, actively-breaking bug where cross-device
+  /// sync could never receive updates via normal app usage at all.
+  Future<void> _reconcile() async {
     final cloudUpdatedAt = await _cloudLastUpdated();
     final prefs = await SharedPreferences.getInstance();
     final localLastSyncedMs = prefs.getInt(_localLastSyncedKey);
@@ -235,7 +250,14 @@ class SyncService {
     }
     await _markLocalSynced();
   }
-  Future<void> syncNow() async { await uploadAll(); await _markLocalSynced(); }
+
+  Future<void> syncOnSignIn() async => _reconcile();
+
+  /// Was previously `await uploadAll(); await _markLocalSynced();` --
+  /// a blind, direction-less upload. See [_reconcile] doc above for why
+  /// that silently broke cross-device sync. Now shares the exact same
+  /// freshness-aware logic as syncOnSignIn().
+  Future<void> syncNow() async => _reconcile();
 
   /// Deletes all user data from Firestore (called before account deletion).
   Future<void> deleteAllCloudData() async {

@@ -51,11 +51,49 @@ class AuthService extends ChangeNotifier {
   Future<UserCredential> signInWithEmail(String email, String password) =>
       _auth.signInWithEmailAndPassword(email: email, password: password);
 
+  /// FIX: registration previously only checked that the email matched a
+  /// generic FORMAT (name@domain.tld) and the password met Firebase's own
+  /// minimum length -- it never verified the email actually belongs to
+  /// the person registering. That is exactly what produced the "any
+  /// email and any password gets accepted" report: format-valid but
+  /// completely fake/unowned addresses (and very weak but
+  /// length-legal passwords) were indistinguishable from real ones at
+  /// registration time. This does not block registration (a hard block
+  /// risks locking someone out if a verification email is delayed or
+  /// lost), but it does send Firebase's real verification link so the
+  /// UI can tell the user to confirm ownership of the address, and so
+  /// [User.emailVerified] is available for any future gating decision.
   Future<UserCredential> registerWithEmail(String email, String password, String displayName) async {
     final cred = await _auth.createUserWithEmailAndPassword(email: email, password: password);
     await cred.user?.updateDisplayName(displayName);
+    try {
+      await cred.user?.sendEmailVerification();
+    } catch (e) {
+      // Non-fatal: registration itself already succeeded. A verification
+      // email failing to send (rate limiting, transient network error)
+      // should never be treated as a registration failure.
+      debugPrint('[AuthService] sendEmailVerification failed (non-fatal): $e');
+    }
     return cred;
   }
+
+  /// Re-sends the verification email to the currently signed-in user.
+  /// Exposed so the UI can offer a "resend verification email" action
+  /// (e.g. if the first one was missed, went to spam, or expired).
+  Future<void> resendEmailVerification() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+    await user.reload();
+    if (user.emailVerified) return;
+    await user.sendEmailVerification();
+  }
+
+  /// Whether the currently signed-in user's email address has been
+  /// confirmed via the verification link. Always reflects Firebase's
+  /// last-known state for this session -- call [User.reload] first
+  /// (e.g. via [resendEmailVerification] or a manual refresh) to check
+  /// for a just-completed verification.
+  bool get isEmailVerified => _auth.currentUser?.emailVerified ?? true;
 
   Future<void> sendPasswordReset(String email) => _auth.sendPasswordResetEmail(email: email);
 
