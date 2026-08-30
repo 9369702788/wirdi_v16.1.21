@@ -121,11 +121,51 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _updateCountdown());
   }
 
+  /// ROOT CAUSE FIX: this used to call [_loadPrayer] the INSTANT the
+  /// visible countdown reached zero -- i.e. exactly when a prayer time
+  /// arrives. [_loadPrayer] re-fetches prayer times and reschedules
+  /// ALL prayer notifications via
+  /// PrayerNotificationScheduler.rescheduleFromResult ->
+  /// NotificationService.scheduleAll(), which starts by CANCELLING
+  /// every currently-scheduled notification before re-adding them.
+  /// With the home dashboard open right as a prayer time arrives
+  /// (exactly when its own countdown reaches zero -- an extremely
+  /// common case, not an edge case), this raced against and CANCELLED
+  /// the "at prayer time" notification (the one with the real Adhan
+  /// sound) at the exact moment it was due to fire. By the time the
+  /// freshly recomputed schedule ran a moment later, that prayer's
+  /// time was already in the past, so scheduleAll()'s "never schedule
+  /// something already in the past" guard silently dropped it
+  /// forever -- it never got a second chance to fire. The earlier
+  /// "X minutes before" reminder was unaffected because it had
+  /// already fired well before this race could occur -- exactly the
+  /// reported symptom: the early reminder works, the real Adhan
+  /// notification at the actual prayer time does not.
+  ///
+  /// Fix: advance to the next prayer already present in TODAY's
+  /// already-fetched list -- a purely local state update with no
+  /// network call and no reschedule, so nothing can race the
+  /// notifications already correctly scheduled for the rest of the
+  /// day. Only fall back to a real [_loadPrayer] (now safe to
+  /// reschedule against, since it only runs once per day when today's
+  /// list is exhausted) once every prayer in today's list has passed.
   void _updateCountdown() {
     final prayer = _prayer;
     if (prayer == null) return;
     final diff = prayer.next.dateTime.difference(DateTime.now());
     if (diff.isNegative) {
+      final upcoming = prayer.prayers.where((p) => p.dateTime.isAfter(DateTime.now())).toList();
+      if (upcoming.isNotEmpty) {
+        final updated = PrayerTimesResult(
+          prayers: prayer.prayers,
+          next: upcoming.first,
+          isFromCache: prayer.isFromCache,
+          cachedAt: prayer.cachedAt,
+          locationLabel: prayer.locationLabel,
+        );
+        if (mounted) setState(() => _prayer = updated);
+        return;
+      }
       _loadPrayer();
       return;
     }

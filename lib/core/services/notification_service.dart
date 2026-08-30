@@ -78,7 +78,22 @@ class NotificationService {
   static const _adhanChannelId = 'wirdi_prayer_adhan_v2';
   static const _adhanChannelName = 'Adhan';
   static const _adhanChannelDescription = 'Full Adhan audio at prayer time';
-  static const _dailyChannelId = 'wirdi_daily_reminder';
+  /// FIX: this channel ID was the ONE channel in this file that never
+  /// got the same "_v2" rotation the prayer-reminder and Adhan channels
+  /// already received (see their own comments above). Android
+  /// PERMANENTLY remembers a channel's enabled/disabled state across
+  /// app updates AND reinstalls, keyed by this exact string ID -- if
+  /// this channel was ever muted/disabled at any point during this
+  /// app's testing history (a long-press "turn off notifications for
+  /// this category" from the notification shade, a system settings
+  /// reset, etc.), every single Friday/morning-azkar/evening-azkar/
+  /// daily-wird/sleep-azkar notification would silently stop showing
+  /// forever, with the app itself having no way to detect or recover
+  /// from that -- exactly the reported symptom. Rotating the ID forces
+  /// Android to treat it as a brand-new channel, which always starts
+  /// enabled by default, regardless of any prior disabled state tied
+  /// to the old ID.
+  static const _dailyChannelId = 'wirdi_daily_reminder_v2';
   static const _dailyChannelName = 'Daily reminders';
   static const _dailyChannelDescription = 'Friday, Azkar, and daily Wird reminders';
   static const _scheduledIdsKey = 'notif_scheduled_prayer_ids_v1';

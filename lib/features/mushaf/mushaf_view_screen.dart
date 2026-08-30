@@ -1,6 +1,7 @@
 import '../../core/services/tajweed_service.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../core/data/bismillah.dart';
 import '../../core/models/mushaf_models.dart';
@@ -25,21 +26,71 @@ class _MushafViewScreenState extends State<MushafViewScreen> {
   late Future<(List<MushafPage>, List<SurahModel>)> _future;
   late PageController _pageController;
 
+  /// Cached once [_loadAll] resolves, so [_onAudioChanged] (which fires
+  /// on every ayah transition, independent of the FutureBuilder) can
+  /// look up which page a given ayah belongs to without re-awaiting
+  /// the future.
+  List<MushafPage>? _pages;
+
   @override
   void initState() {
     super.initState();
     _future = _loadAll();
     _pageController = PageController(initialPage: (widget.initialPage ?? 1) - 1);
+    quranAudio.addListener(_onAudioChanged);
+    // FIX: keep the screen awake while reading the Mushaf, same as a
+    // real physical copy never "locks itself" while you're reading it.
+    // WakelockPlus only suppresses the device's AUTOMATIC screen
+    // timeout -- it does NOT block the user's own power button or any
+    // manual lock action, so "the user locking the screen themselves"
+    // still works exactly as normal. Disabled again in dispose() so
+    // leaving this screen doesn't keep the whole app awake elsewhere.
+    WakelockPlus.enable();
   }
 
   Future<(List<MushafPage>, List<SurahModel>)> _loadAll() async {
     final results = await Future.wait([MushafRepository.load(), QuranRepository.load()]);
-    return (results[0] as List<MushafPage>, results[1] as List<SurahModel>);
+    final pages = results[0] as List<MushafPage>;
+    _pages = pages;
+    return (pages, results[1] as List<SurahModel>);
+  }
+
+  /// FIX: during continuous "play whole surah" playback, the currently
+  /// playing ayah advances automatically and this screen already
+  /// highlights whichever ayah is playing -- but nothing previously
+  /// moved the VISIBLE page forward when playback crossed a Mushaf
+  /// page boundary, so once a page's last ayah finished, the next
+  /// ayah's highlight kept advancing on a page the user could no
+  /// longer see, with no indication to swipe forward. This finds which
+  /// page the currently-playing ayah belongs to and animates there
+  /// automatically whenever it's not the page already on screen.
+  void _onAudioChanged() {
+    final pages = _pages;
+    final surah = quranAudio.currentSurahNumber;
+    final ayah = quranAudio.playingAyah;
+    if (pages == null || surah == null || ayah == null) return;
+    if (!_pageController.hasClients) return;
+
+    final targetIndex = pages.indexWhere(
+      (p) => p.ayahs.any((a) => a.surahNumber == surah && a.ayahNumber == ayah),
+    );
+    if (targetIndex == -1) return;
+
+    final currentIndex = _pageController.page?.round() ?? _pageController.initialPage;
+    if (targetIndex == currentIndex) return;
+
+    _pageController.animateToPage(
+      targetIndex,
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
   void dispose() {
+    quranAudio.removeListener(_onAudioChanged);
     _pageController.dispose();
+    WakelockPlus.disable();
     super.dispose();
   }
 

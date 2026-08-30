@@ -163,12 +163,36 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _updateCountdown());
   }
 
+  /// FIX: same root-cause race as home_dashboard_screen.dart's
+  /// _updateCountdown() -- calling [_load] (a full re-fetch +
+  /// PrayerNotificationScheduler.rescheduleFromResult, which cancels
+  /// and re-adds every scheduled notification) the INSTANT this
+  /// screen's own countdown reaches zero raced against and cancelled
+  /// the "at prayer time" Adhan notification at the exact moment it
+  /// was due to fire, and the freshly recomputed schedule then
+  /// silently dropped it as already in the past. Fix: advance locally
+  /// to the next prayer already present in today's fetched list (no
+  /// network call, no reschedule) instead of re-fetching every single
+  /// time a prayer boundary is crossed; only fall back to a real
+  /// [_load] once today's list is exhausted.
   void _updateCountdown() {
     final result = _result;
     if (result == null) return;
 
     final diff = result.next.dateTime.difference(DateTime.now());
     if (diff.isNegative) {
+      final upcoming = result.prayers.where((p) => p.dateTime.isAfter(DateTime.now())).toList();
+      if (upcoming.isNotEmpty) {
+        final updated = PrayerTimesResult(
+          prayers: result.prayers,
+          next: upcoming.first,
+          isFromCache: result.isFromCache,
+          cachedAt: result.cachedAt,
+          locationLabel: result.locationLabel,
+        );
+        if (mounted) setState(() => _result = updated);
+        return;
+      }
       _load();
       return;
     }
