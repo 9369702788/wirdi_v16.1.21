@@ -188,32 +188,6 @@ class RadioService extends ChangeNotifier {
         .toList();
   }
 
-  /// Fetches Quran radio stations from mp3quran.net (a real, verified
-  /// public API: https://mp3quran.net/api/v3/radios) and merges any NEW
-  /// stations (deduplicated by stream URL) into the active list.
-  Future<void> _mergeMp3Quran() async {
-    try {
-      final resp = await http
-          .get(Uri.parse('https://mp3quran.net/api/v3/radios?language=ar'))
-          .timeout(const Duration(seconds: 10));
-      if (resp.statusCode != 200) return;
-      final decoded = jsonDecode(resp.body) as Map<String, dynamic>;
-      final radios = decoded['radios'] as List<dynamic>? ?? const [];
-      final existingUrls = _liveStations.map((s) => s.streamUrl).toSet();
-      final newStations = radios
-          .whereType<Map<String, dynamic>>()
-          .map(RadioStation.fromMp3Quran)
-          .where((s) => s.streamUrl.isNotEmpty && !existingUrls.contains(s.streamUrl))
-          .toList();
-      if (newStations.isEmpty) return;
-      _liveStations = [..._liveStations, ...newStations];
-      _sourceLabel = _sourceLabel + ' + ' + newStations.length.toString() + ' from mp3quran.net';
-      debugPrint('[Radio] Merged ' + newStations.length.toString() + ' extra stations from mp3quran.net');
-    } catch (e) {
-      debugPrint('[Radio] mp3quran.net merge error: ' + e.toString());
-    }
-  }
-
   // ── Playback ──────────────────────────────────────────────────────────────
   Future<void> play(RadioStation station) async {
     try {
