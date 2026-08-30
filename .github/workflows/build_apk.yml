@@ -199,10 +199,26 @@ jobs:
           APKSIGNER=$(find "$ANDROID_HOME" -name apksigner | sort -V | tail -1)
           echo "Using apksigner at: $APKSIGNER"
           "$APKSIGNER" verify --print-certs build/app/outputs/flutter-apk/app-debug.apk | tee apksigner_output.txt
-          REAL_SHA1=$(grep "Signer #1 certificate SHA-1" apksigner_output.txt | sed "s/.*: //" | tr -d ':' | tr 'a-f' 'A-F')
+          # v95 FIX: the original grep pattern "Signer #1 certificate SHA-1"
+          # never matched this apksigner version's real output, which
+          # instead prints lines like "V2 Signer: certificate SHA-1
+          # digest: <hex>" (no colons, lowercase, different label
+          # entirely). That caused REAL_SHA1 to always end up empty,
+          # making this gate report a false mismatch even when the
+          # actual signing certificate was already correct. Extract the
+          # hex digest from ANY line containing "certificate SHA-1
+          # digest:" instead of depending on the exact signer-scheme
+          # label prefix (V1/V2/V3/Signer #1/etc, which varies by
+          # apksigner version and signature scheme).
+          REAL_SHA1=$(grep -oE "certificate SHA-1 digest: *[0-9a-fA-F:]+" apksigner_output.txt | head -1 | sed "s/.*digest: *//" | tr -d ':' | tr 'a-f' 'A-F')
           EXPECTED_SHA1=$(echo "${{ steps.keystore_setup.outputs.sha1 }}" | tr -d ':' | tr 'a-f' 'A-F')
           echo "Real APK signing SHA-1 (no colons): $REAL_SHA1"
           echo "Expected (from debug.keystore file): $EXPECTED_SHA1"
+          if [ -z "$REAL_SHA1" ]; then
+            echo "::error::Could not extract a SHA-1 digest from apksigner's output at all -- the output format changed again or verification itself failed. Treating this as a failure rather than silently skipping the check. Raw output:"
+            cat apksigner_output.txt
+            exit 1
+          fi
           if [ "$REAL_SHA1" != "$EXPECTED_SHA1" ]; then
             echo "::error::The ACTUAL built APK is signed with a DIFFERENT certificate than the debug.keystore file we copied in! This is the exact bug that caused Google Sign-In to fail for months. Failing the build instead of shipping a broken APK."
             exit 1
