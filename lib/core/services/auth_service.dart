@@ -181,4 +181,33 @@ class AuthService extends ChangeNotifier {
     try { await _googleSignIn.signOut(); } catch (_) {}
     notifyListeners();
   }
+
+  List<String> get currentUserProviderIds =>
+      _auth.currentUser?.providerData.map((p) => p.providerId).toList() ?? const [];
+
+  Future<void> reauthenticateWithPassword(String password) async {
+    final user = _auth.currentUser;
+    if (user == null || user.email == null) {
+      throw AuthServiceException('No signed-in email account to re-authenticate.');
+    }
+    final credential = EmailAuthProvider.credential(email: user.email!, password: password);
+    await user.reauthenticateWithCredential(credential);
+  }
+
+  Future<void> reauthenticateWithGoogle() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+    final googleUser = await _googleSignIn.signIn();
+    if (googleUser == null) throw Exception('cancelled');
+    final googleAuth = await googleUser.authentication;
+    final credential = GoogleAuthProvider.credential(accessToken: googleAuth.accessToken, idToken: googleAuth.idToken);
+    await user.reauthenticateWithCredential(credential);
+  }
+
+  Future<void> reauthenticateWithApple() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+    final provider = AppleAuthProvider()..addScope('email')..addScope('fullName');
+    await user.reauthenticateWithProvider(provider);
+  }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/services/auth_service.dart';
 import 'login_screen.dart';
 import '../../core/services/sync_service.dart';
@@ -47,6 +48,94 @@ class _AccountScreenState extends State<AccountScreen> {
     if (ok != true) return;
     await AuthService.instance.signOut();
     if (mounted) Navigator.pushReplacementNamed(context, '/login');
+  }
+
+  Future<void> _deleteAccountWithReauth(BuildContext context) async {
+    final l = AppLocalizations.of(context);
+    try {
+      await _performDeletion();
+      if (context.mounted) Navigator.pushReplacementNamed(context, '/login');
+    } on FirebaseAuthException catch (e) {
+      if (e.code != 'requires-recent-login') {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l.authDeleteAccountFailed(e.toString()))));
+        }
+        return;
+      }
+      if (!context.mounted) return;
+      final reauthOk = await _reauthenticate(context);
+      if (!reauthOk || !context.mounted) return;
+      try {
+        await _performDeletion();
+        if (context.mounted) Navigator.pushReplacementNamed(context, '/login');
+      } catch (e2) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l.authDeleteAccountFailed(e2.toString()))));
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l.authDeleteAccountFailed(e.toString()))));
+      }
+    }
+  }
+
+  Future<void> _performDeletion() async {
+    final uid = AuthService.instance.currentUser?.uid;
+    if (uid != null) {
+      await SyncService.instance.deleteAllCloudData();
+    }
+    await AuthService.instance.deleteAccount();
+  }
+
+  Future<bool> _reauthenticate(BuildContext context) async {
+    final providers = AuthService.instance.currentUserProviderIds;
+    try {
+      if (providers.contains('google.com')) {
+        await AuthService.instance.reauthenticateWithGoogle();
+        return true;
+      }
+      if (providers.contains('apple.com')) {
+        await AuthService.instance.reauthenticateWithApple();
+        return true;
+      }
+      if (!context.mounted) return false;
+      final password = await _promptForPassword(context);
+      if (password == null) return false;
+      await AuthService.instance.reauthenticateWithPassword(password);
+      return true;
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Re-authentication failed: $e')));
+      }
+      return false;
+    }
+  }
+
+  Future<String?> _promptForPassword(BuildContext context) async {
+    final l = AppLocalizations.of(context);
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l.authPassword),
+        content: TextField(
+          controller: controller,
+          obscureText: true,
+          autofocus: true,
+          decoration: InputDecoration(labelText: l.authPassword),
+          onSubmitted: (v) => Navigator.pop(dialogContext, v),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, null), child: Text(l.commonCancel)),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, controller.text), child: Text(l.authSignIn)),
+        ],
+      ),
+    );
   }
 
   @override
@@ -147,22 +236,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 ),
               );
               if (confirmed != true) return;
-              try {
-                // Delete Firestore data first
-                final uid = AuthService.instance.currentUser?.uid;
-                if (uid != null) {
-                  await SyncService.instance.deleteAllCloudData();
-                }
-                await AuthService.instance.deleteAccount();
-                if (context.mounted) {
-                  Navigator.pushReplacementNamed(context, '/login');
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l.authDeleteAccountFailed(e.toString()))));
-                }
-              }
+              await _deleteAccountWithReauth(context);
             },
           ),
         ),

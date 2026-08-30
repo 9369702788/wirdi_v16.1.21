@@ -5,6 +5,17 @@ path = Path('android/app/src/main/AndroidManifest.xml')
 text = path.read_text()
 
 # All permissions needed by Wirdi
+# AUDIT (production readiness): RECEIVE_BOOT_COMPLETED was declared but
+# never actually used -- no BroadcastReceiver listens for
+# android.intent.action.BOOT_COMPLETED anywhere in this codebase, and
+# notification_service.dart's own doc comment explicitly documents that
+# reminders are only rescheduled on the next successful prayer-times
+# fetch (app open / refresh), NOT after a reboot. An unused dangerous-
+# adjacent permission is exactly what Google Play's permission review
+# flags and what a privacy-conscious user would question -- removed
+# rather than left in "just in case". If real boot-survival scheduling
+# is implemented later, re-add this permission alongside the actual
+# BroadcastReceiver that uses it.
 perms = [
     'android.permission.INTERNET',
     'android.permission.ACCESS_NETWORK_STATE',
@@ -12,7 +23,6 @@ perms = [
     'android.permission.ACCESS_COARSE_LOCATION',
     'android.permission.VIBRATE',
     'android.permission.POST_NOTIFICATIONS',
-    'android.permission.RECEIVE_BOOT_COMPLETED',
     'android.permission.SCHEDULE_EXACT_ALARM',
     'android.permission.FOREGROUND_SERVICE',
     'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',

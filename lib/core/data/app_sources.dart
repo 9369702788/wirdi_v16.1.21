@@ -9,11 +9,15 @@ class AppSources {
   static const String azkarJsonUrl =
       'https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/data/ar.json';
 
-  /// Tafsir Al-Muyassar (Arabic), one concise commentary entry per ayah,
-  /// 6236 entries. Verified real dataset — checked structure and HTTP
-  /// 200 before wiring in.
+  /// Tafsir Al-Muyassar (ar.muyassar), served by Al Quran Cloud
+  /// (Islamic Network) — a long-running, widely used public Quran API
+  /// with no key required. This edition is attributed by the API
+  /// itself to its publisher, King Fahad Quran Complex:
+  /// https://api.alquran.cloud/v1/edition?format=text&type=tafsir&language=ar
+  /// Replaces a prior unverified personal GitHub mirror that had no
+  /// stated license for this text.
   static const String tafsirJsonUrl =
-      'https://raw.githubusercontent.com/00AhmedMokhtar00/QuranTafseer-ar-json/master/tafseer.json';
+      'https://api.alquran.cloud/v1/quran/ar.muyassar';
 
   /// English transliteration, same underlying project (risan/quran-json)
   /// and Tanzil.net sourcing as the main Quran text, same surah/ayah
@@ -172,8 +176,9 @@ https://quranenc.com
 https://github.com/fawazahmed0/hadith-api
 
 التفسير الميسر:
-مصدر بيانات JSON مفتوح على GitHub
-https://github.com/00AhmedMokhtar00/QuranTafseer-ar-json
+مجمع الملك فهد لطباعة المصحف الشريف (الناشر الرسمي)
+عبر واجهة Al Quran Cloud (شبكة Islamic Network)
+https://alquran.cloud/cdn
 
 ترقيم صفحات المصحف (604 صفحة):
 مصدر بيانات JSON مفتوح على GitHub
@@ -232,8 +237,9 @@ Open JSON dataset on GitHub (Arabic, English, and Turkish)
 https://github.com/fawazahmed0/hadith-api
 
 Simplified Tafsir (Al-Muyassar):
-Open JSON dataset on GitHub
-https://github.com/00AhmedMokhtar00/QuranTafseer-ar-json
+King Fahd Quran Complex (official publisher)
+Served via Al Quran Cloud (Islamic Network)
+https://alquran.cloud/cdn
 
 Mushaf page numbering (604 pages):
 Open JSON dataset on GitHub
@@ -292,8 +298,9 @@ Offener JSON-Datensatz auf GitHub (Arabisch, Englisch und Türkisch)
 https://github.com/fawazahmed0/hadith-api
 
 Vereinfachter Tafsir (Al-Muyassar):
-Offener JSON-Datensatz auf GitHub
-https://github.com/00AhmedMokhtar00/QuranTafseer-ar-json
+King Fahd Quran Complex (offizieller Herausgeber)
+Bereitgestellt über Al Quran Cloud (Islamic Network)
+https://alquran.cloud/cdn
 
 Mushaf-Seitennummerierung (604 Seiten):
 Offener JSON-Datensatz auf GitHub
@@ -352,8 +359,9 @@ GitHub üzerinde açık JSON veri seti (Arapça, İngilizce ve Türkçe)
 https://github.com/fawazahmed0/hadith-api
 
 Muyesser Tefsir:
-GitHub üzerinde açık JSON veri seti
-https://github.com/00AhmedMokhtar00/QuranTafseer-ar-json
+Kral Fahd Kur'an Basım Kompleksi (resmi yayıncı)
+Al Quran Cloud (Islamic Network) üzerinden sunulur
+https://alquran.cloud/cdn
 
 Mushaf sayfa numaralandırması (604 sayfa):
 GitHub üzerinde açık JSON veri seti

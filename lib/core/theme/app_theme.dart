@@ -53,7 +53,13 @@ enum AppColorTheme { emerald, ocean, ruby, amethyst, manuscript }
 /// introduced, avoiding any packaging/licensing risk right before a
 /// release build.
 class AppThemeDefinition {
-  final String displayName;
+  /// Per-locale display name (keys: ar/en/de/tr/fr/es/id, matching this
+  /// app's supported languages). FIX (v105): this used to be a single
+  /// hardcoded Arabic string, so the theme picker always showed Arabic
+  /// names even when the app's language was set to English/German/etc.
+  /// [displayNameFor] falls back to 'en' and finally to the first
+  /// available value if a locale is missing.
+  final Map<String, String> displayNameByLocale;
   final Color primary;
   final Color accent;
   final Color lightBackground;
@@ -62,7 +68,7 @@ class AppThemeDefinition {
   final double cardRadius;
   final String? fontFamily;
   const AppThemeDefinition({
-    required this.displayName,
+    required this.displayNameByLocale,
     required this.primary,
     required this.accent,
     required this.lightBackground,
@@ -71,6 +77,9 @@ class AppThemeDefinition {
     required this.cardRadius,
     this.fontFamily,
   });
+
+  String displayNameFor(String languageCode) =>
+      displayNameByLocale[languageCode] ?? displayNameByLocale['en'] ?? displayNameByLocale.values.first;
 }
 
 class AppTheme {
@@ -78,7 +87,10 @@ class AppTheme {
 
   static const Map<AppColorTheme, AppThemeDefinition> definitions = {
     AppColorTheme.emerald: AppThemeDefinition(
-      displayName: 'زمردي',
+      displayNameByLocale: {
+        'ar': 'زمردي', 'en': 'Emerald', 'de': 'Smaragd', 'tr': 'Zümrüt',
+        'fr': 'Émeraude', 'es': 'Esmeralda', 'id': 'Zamrud',
+      },
       primary: Color(0xFF0F766E),
       accent: Color(0xFFD4AF37),
       lightBackground: Color(0xFFF8FAF6),
@@ -87,7 +99,10 @@ class AppTheme {
       cardRadius: 20,
     ),
     AppColorTheme.ocean: AppThemeDefinition(
-      displayName: 'محيطي',
+      displayNameByLocale: {
+        'ar': 'محيطي', 'en': 'Ocean', 'de': 'Ozean', 'tr': 'Okyanus',
+        'fr': 'Océan', 'es': 'Océano', 'id': 'Samudra',
+      },
       primary: Color(0xFF0369A1),
       accent: Color(0xFF06B6D4),
       lightBackground: Color(0xFFF4FAFD),
@@ -96,7 +111,10 @@ class AppTheme {
       cardRadius: 16,
     ),
     AppColorTheme.ruby: AppThemeDefinition(
-      displayName: 'ياقوتي',
+      displayNameByLocale: {
+        'ar': 'ياقوتي', 'en': 'Ruby', 'de': 'Rubin', 'tr': 'Yakut',
+        'fr': 'Rubis', 'es': 'Rubí', 'id': 'Delima',
+      },
       primary: Color(0xFF9F1239),
       accent: Color(0xFFF59E0B),
       lightBackground: Color(0xFFFDF6F6),
@@ -105,7 +123,10 @@ class AppTheme {
       cardRadius: 24,
     ),
     AppColorTheme.amethyst: AppThemeDefinition(
-      displayName: 'بنفسجي',
+      displayNameByLocale: {
+        'ar': 'بنفسجي', 'en': 'Amethyst', 'de': 'Amethyst', 'tr': 'Ametist',
+        'fr': 'Améthyste', 'es': 'Amatista', 'id': 'Kecubung',
+      },
       primary: Color(0xFF6D28D9),
       accent: Color(0xFFF472B6),
       lightBackground: Color(0xFFF9F7FD),
@@ -114,7 +135,10 @@ class AppTheme {
       cardRadius: 20,
     ),
     AppColorTheme.manuscript: AppThemeDefinition(
-      displayName: 'مخطوطة كلاسيكية',
+      displayNameByLocale: {
+        'ar': 'مخطوطة كلاسيكية', 'en': 'Manuscript', 'de': 'Manuskript', 'tr': 'El Yazması',
+        'fr': 'Manuscrit', 'es': 'Manuscrito', 'id': 'Manuskrip',
+      },
       primary: Color(0xFF92400E),
       accent: Color(0xFFD4AF37),
       lightBackground: Color(0xFFFBF6EC),

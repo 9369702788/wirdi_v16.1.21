@@ -207,7 +207,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // end user to see in Settings. Debug builds only now.
                 child: kDebugMode
                     ? const Text(
-                        'Merge build: v104-2026-08-30-reliable-radio-sources',
+                        'Merge build: v110-2026-08-30-fix-mushaf-row-overflow',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                       )
@@ -301,7 +301,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       // border. Works independently of light/dark/auto above --
                       // e.g. "Ocean + Dark" and "Ruby + Light" are both valid
                       // combinations.
-                      const Text('لون التطبيق', style: TextStyle(fontWeight: FontWeight.w700)),
+                      Builder(builder: (context) {
+                        const labelByLocale = {
+                          'ar': 'لون التطبيق', 'en': 'App color', 'de': 'App-Farbe', 'tr': 'Uygulama rengi',
+                          'fr': 'Couleur de l\'application', 'es': 'Color de la app', 'id': 'Warna aplikasi',
+                        };
+                        final lang = Localizations.localeOf(context).languageCode;
+                        return Text(labelByLocale[lang] ?? labelByLocale['en']!, style: const TextStyle(fontWeight: FontWeight.w700));
+                      }),
                       const SizedBox(height: 10),
                       SizedBox(
                         height: 76,
@@ -340,7 +347,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           : null,
                                     ),
                                     const SizedBox(height: 6),
-                                    Text(def.displayName, style: const TextStyle(fontSize: 10)),
+                                    Text(def.displayNameFor(Localizations.localeOf(context).languageCode), style: const TextStyle(fontSize: 10)),
                                   ],
                                 ),
                               ),

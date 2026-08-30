@@ -170,3 +170,29 @@ elif has_signing_configs_block(text):
     print('A signingConfigs {} block already exists (release path just added it, or one pre-existed) -- debug entry must be added manually inside it if not already covered')
 else:
     print('WARNING: debug.keystore not found at repo root -- explicit debug signingConfig NOT added')
+
+# ---- PRODUCTION READINESS: pin compileSdk/targetSdk explicitly ----
+# CI installs Flutter via `channel: stable` with NO specific version
+# pinned -- different stable Flutter releases bundle different default
+# compileSdkVersion/targetSdkVersion values in their generated
+# build.gradle(.kts) template (they reference flutter.compileSdkVersion
+# / flutter.targetSdkVersion, computed internally by whichever Flutter
+# tool version happens to be installed that day). That means "what API
+# level this app actually targets" was previously NOT deterministic
+# across builds -- exactly the kind of silent drift Google Play's
+# target-API-level requirement (API 36 for 2026) cannot tolerate.
+# Force explicit, deterministic values regardless of Flutter version.
+text2 = path.read_text()
+if is_kts:
+    text2 = text2.replace('compileSdk = flutter.compileSdkVersion', 'compileSdk = 36')
+    text2 = text2.replace('targetSdk = flutter.targetSdkVersion', 'targetSdk = 36')
+else:
+    text2 = text2.replace('compileSdk flutter.compileSdkVersion', 'compileSdk 36')
+    text2 = text2.replace('targetSdk flutter.targetSdkVersion', 'targetSdk 36')
+if text2 != path.read_text():
+    path.write_text(text2)
+    print('compileSdk/targetSdk pinned to 36 (was flutter.compileSdkVersion/targetSdkVersion)')
+else:
+    print('WARNING: could not find the expected flutter.compileSdkVersion/targetSdkVersion lines to pin -- '
+          'the generated build.gradle(.kts) may use different property names than expected. '
+          'Check android/app/build.gradle(.kts) manually and verify compileSdk/targetSdk are 36.')

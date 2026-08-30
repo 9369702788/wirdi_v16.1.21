@@ -79,17 +79,59 @@ class TafsirRepository {
   // Top-level-callable (static) so it can run in a background isolate
   // via compute() — must not touch any instance/static mutable state
   // beyond its own arguments and return value.
+  //
+  // Al Quran Cloud's GET /v1/quran/{edition} response shape:
+  // { "code": 200, "status": "OK",
+  //   "data": { "surahs": [
+  //     { "number": 1, "ayahs": [
+  //         { "number": <global 1-6236>, "text": "...",
+  //           "numberInSurah": <1-based within surah>, "juz": .. },
+  //         ... ] },
+  //     ... ] } }
+  // We key by "surah_numberInSurah" (matches tafsirFor's lookup), not
+  // the global 1-6236 "number" field.
+  //
+  // NOTE: this exact top-level "data.surahs[].ayahs[]" shape is the
+  // documented Al Quran Cloud pattern for whole-Quran-by-edition
+  // fetches, but wasn't independently re-verified against a live
+  // response in this session (tool access was limited to the
+  // /v1/edition listing endpoint, which WAS verified and returned
+  // ar.muyassar correctly). Confirm this parses cleanly on the first
+  // real test run; if the shape differs, the error below will name
+  // exactly which key was missing rather than failing silently.
   static Map<String, String> _parse(String raw) {
-    final decoded = jsonDecode(raw) as List<dynamic>;
+    final decoded = jsonDecode(raw) as Map<String, dynamic>;
+    final data = decoded['data'];
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Tafsir parse error: no "data" object in response. '
+          'Raw keys: ${decoded.keys.toList()}');
+    }
+    final surahs = data['surahs'];
+    if (surahs is! List) {
+      throw Exception('Tafsir parse error: no "data.surahs" array. '
+          'data keys: ${data.keys.toList()}');
+    }
+
     final map = <String, String>{};
-    for (final item in decoded) {
-      final entry = item as Map<String, dynamic>;
-      final surah = entry['number']?.toString();
-      final ayah = entry['aya']?.toString();
-      final text = entry['text']?.toString();
-      if (surah != null && ayah != null && text != null) {
-        map['${surah}_$ayah'] = text;
+    for (final surahEntry in surahs) {
+      final surahMap = surahEntry as Map<String, dynamic>;
+      final surahNumber = surahMap['number']?.toString();
+      final ayahs = surahMap['ayahs'];
+      if (surahNumber == null || ayahs is! List) continue;
+      for (final ayahEntry in ayahs) {
+        final ayahMap = ayahEntry as Map<String, dynamic>;
+        final ayahInSurah = ayahMap['numberInSurah']?.toString();
+        final text = ayahMap['text']?.toString();
+        if (ayahInSurah != null && text != null && text.isNotEmpty) {
+          map['${surahNumber}_$ayahInSurah'] = text;
+        }
       }
+    }
+
+    if (map.isEmpty) {
+      throw Exception('Tafsir parse error: parsed 0 entries from a '
+          'well-formed response — check field names against a live '
+          'sample of https://api.alquran.cloud/v1/quran/ar.muyassar');
     }
     return map;
   }

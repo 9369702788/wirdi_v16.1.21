@@ -136,7 +136,7 @@ class _WirdiInsightsScreenState extends State<WirdiInsightsScreen> {
                     physics: const NeverScrollableScrollPhysics(),
                     mainAxisSpacing: 12,
                     crossAxisSpacing: 12,
-                    childAspectRatio: 1.5,
+                    childAspectRatio: 1.3, // was 1.5 -- gives StatCard more vertical room
                     children: [
                       _StatCard(
                         icon: Icons.menu_book,
@@ -366,11 +366,21 @@ class _StatCard extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Icon(icon, color: color),
-            const Spacer(),
-            Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
-            Text(label, style: const TextStyle(fontSize: 12, color: AppColors.mutedText)),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+            ),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 12, color: AppColors.mutedText),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
       ),

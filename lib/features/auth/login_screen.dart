@@ -75,9 +75,32 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// FIX: this used to fall back to a totally generic "Sign-in failed.
+  /// Please try again." for ANY FirebaseAuthException code not in the
+  /// map -- which completely hid what was actually going wrong. Most
+  /// importantly, Firebase Auth's client SDKs have (since ~2023)
+  /// consolidated the old 'wrong-password' and 'user-not-found' codes
+  /// into a single 'invalid-credential' code for both cases, to avoid
+  /// letting an attacker use sign-in errors to discover which emails
+  /// have an account (a legitimate security hardening on Firebase's
+  /// side) -- but this app's error map never had 'invalid-credential'
+  /// in it, so a user with a genuinely correct-looking email/password
+  /// combination could see this exact generic message with zero
+  /// indication of what Firebase actually said. Added the new code
+  /// plus a few other common ones, AND the fallback for anything still
+  /// unmapped now includes the raw code so a future unmapped error is
+  /// never silently invisible again.
   String _msg(String code) {
-    const m = {'user-not-found':'No account with this email.','wrong-password':'Incorrect password.','invalid-email':'Invalid email.','too-many-requests':'Too many attempts. Try later.'};
-    return m[code] ?? 'Sign-in failed. Please try again.';
+    const m = {
+      'user-not-found': 'No account with this email.',
+      'wrong-password': 'Incorrect password.',
+      'invalid-credential': 'Incorrect email or password.',
+      'invalid-email': 'Invalid email.',
+      'too-many-requests': 'Too many attempts. Try later.',
+      'user-disabled': 'This account has been disabled.',
+      'network-request-failed': 'Network error. Please check your connection and try again.',
+    };
+    return m[code] ?? 'Sign-in failed ($code). Please try again.';
   }
 
   @override
@@ -120,8 +143,8 @@ class _LoginScreenState extends State<LoginScreen> {
         Row(children: [const Expanded(child: Divider(color: Colors.white30)), Padding(padding: const EdgeInsets.symmetric(horizontal: 12), child: Text(l.authOrContinueWith, style: const TextStyle(color: Colors.white54, fontSize: 12))), const Expanded(child: Divider(color: Colors.white30))]),
         const SizedBox(height: 20),
         _Soc(label: l.authSignInWithGoogle, icon: Icons.g_mobiledata_rounded, onPressed: _loading ? null : () => _go(() async { final c = await AuthService.instance.signInWithGoogle(); if (c==null) throw Exception('cancelled'); await SyncService.instance.syncOnSignIn(); })),
-        const SizedBox(height: 12),
-        _Soc(label: l.authSignInWithApple, icon: Icons.apple, onPressed: _loading ? null : () => _go(() async { final c = await AuthService.instance.signInWithApple(); if (c==null) throw Exception('cancelled'); await SyncService.instance.syncOnSignIn(); })),
+        // Apple Sign-In temporarily removed from the UI per explicit request.
+        // AuthService.instance.signInWithApple() is left intact for a quick re-add later.
         const SizedBox(height: 28),
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           Text(l.authNoAccount, style: const TextStyle(color: Colors.white70)),

@@ -94,21 +94,34 @@ class _MushafViewScreenState extends State<MushafViewScreen> {
 
           final (pages, allSurahs) = snapshot.data!;
 
-          return PageView.builder(
-            controller: _pageController,
-            reverse: true,
-            itemCount: pages.length,
-            onPageChanged: (index) {
-              UserProgressService.saveLastReading(
-                surahNumber: pages[index].ayahs.isNotEmpty ? pages[index].ayahs.first.surahNumber : 1,
-                surahName: '',
-                ayahNumber: pages[index].ayahs.isNotEmpty ? pages[index].ayahs.first.ayahNumber : 1,
-              );
-            },
-            itemBuilder: (context, index) {
-              final page = pages[index];
-              return _MushafPageView(page: page, allSurahs: allSurahs);
-            },
+          // FIX: Quran pages are ALWAYS read right-to-left, regardless of
+          // the app's current UI language. `reverse: true` on its own
+          // reverses page order RELATIVE to the ambient Directionality --
+          // that gave the right feel when the app locale was LTR
+          // (English/German/etc.), but DOUBLE-flipped it back to
+          // LTR-feeling navigation when the app locale is Arabic (RTL),
+          // since the ambient Directionality is already RTL there.
+          // Wrapping in an explicit, locale-independent RTL
+          // Directionality and dropping `reverse` makes page-flip
+          // direction consistent no matter what language the rest of
+          // the app's UI is in.
+          return Directionality(
+            textDirection: TextDirection.rtl,
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: pages.length,
+              onPageChanged: (index) {
+                UserProgressService.saveLastReading(
+                  surahNumber: pages[index].ayahs.isNotEmpty ? pages[index].ayahs.first.surahNumber : 1,
+                  surahName: '',
+                  ayahNumber: pages[index].ayahs.isNotEmpty ? pages[index].ayahs.first.ayahNumber : 1,
+                );
+              },
+              itemBuilder: (context, index) {
+                final page = pages[index];
+                return _MushafPageView(page: page, allSurahs: allSurahs);
+              },
+            ),
           );
         },
       ),
@@ -211,22 +224,34 @@ class _MushafPageViewState extends State<_MushafPageView> {
       groups.putIfAbsent(ayah.surahNumber, () => []).add(ayah);
     }
 
-    return Container(
-      margin: EdgeInsets.fromLTRB(14, 12, 14, 20 + MediaQuery.of(context).padding.bottom),
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppColors.goldAccent.withValues(alpha: 0.5), width: 2),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.10), blurRadius: 10, offset: const Offset(0, 3)),
-        ],
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (final entry in groups.entries) ...[
+    // FIX: on a tablet, this card previously only grew as tall as its
+    // text content needed, leaving a large empty gap below it instead
+    // of filling the screen like a real Mushaf page. LayoutBuilder
+    // gives us the actual available height so the card can be told to
+    // fill AT LEAST that much -- while still allowed to grow taller and
+    // scroll internally (via the existing SingleChildScrollView) for
+    // any page whose content is genuinely longer than the viewport.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final verticalMargin = 12.0 + 20.0 + MediaQuery.of(context).padding.bottom;
+        final minCardHeight = constraints.maxHeight - verticalMargin;
+        return Container(
+          margin: EdgeInsets.fromLTRB(14, 12, 14, 20 + MediaQuery.of(context).padding.bottom),
+          padding: const EdgeInsets.all(22),
+          constraints: BoxConstraints(minHeight: minCardHeight > 0 ? minCardHeight : 0),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: AppColors.goldAccent.withValues(alpha: 0.5), width: 2),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.10), blurRadius: 10, offset: const Offset(0, 3)),
+            ],
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final entry in groups.entries) ...[
               if (entry.value.isNotEmpty && entry.value.first.ayahNumber == 1) ...[
                 _SurahHeaderBanner(surah: _surahFor(entry.key)),
                 if (Bismillah.shouldShowFor(entry.key)) ...[
@@ -293,17 +318,51 @@ class _MushafPageViewState extends State<_MushafPageView> {
               const SizedBox(height: 16),
             ],
             const Divider(height: 32),
+            // FIX: confirmed via screenshot -- "RIGHT OVERFLOWED BY 68
+            // PIXELS" in German. None of these 3 Text widgets had any
+            // flexible sizing, so each took its full intrinsic (natural)
+            // width -- fine for short Arabic/English strings, but
+            // German's much longer translated hint text pushed the
+            // Row's total width past the screen. Wrapping each in
+            // Flexible/Expanded with ellipsis overflow makes this safe
+            // for a string of ANY length in any current or future
+            // language, not just a fix for German specifically.
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(l10n.quranJuzNumber(widget.page.juzNumber), style: const TextStyle(color: AppColors.mutedText, fontSize: 12)),
-                Text(l10n.mushafTapAyahHint, style: const TextStyle(color: AppColors.mutedText, fontSize: 11)),
-                Text(l10n.mushafPageNumber(widget.page.pageNumber), style: const TextStyle(color: AppColors.mutedText, fontSize: 12)),
+                Flexible(
+                  child: Text(
+                    l10n.quranJuzNumber(widget.page.juzNumber),
+                    style: const TextStyle(color: AppColors.mutedText, fontSize: 12),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    l10n.mushafTapAyahHint,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: AppColors.mutedText, fontSize: 11),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Flexible(
+                  child: Text(
+                    l10n.mushafPageNumber(widget.page.pageNumber),
+                    textAlign: TextAlign.end,
+                    style: const TextStyle(color: AppColors.mutedText, fontSize: 12),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
             ),
-          ],
-        ),
-      ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
