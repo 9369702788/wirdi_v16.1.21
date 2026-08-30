@@ -262,6 +262,39 @@ jobs:
           flutter build appbundle --release
           flutter build apk --release
 
+      - name: HARD GATE #3 -- verify the ACTUAL built RELEASE APK's certificate matches the release keystore
+        if: steps.release_secrets.outputs.present == 'true'
+        run: |
+          # Same class of bug HARD GATE #2 catches for the debug build,
+          # but for release: never trust that "we fed Gradle the release
+          # keystore" is the same thing as "the artifact Gradle actually
+          # produced is signed with it". Extract the REAL certificate
+          # from the built release APK and compare against the release
+          # keystore's own fingerprint -- fail the build loudly on any
+          # mismatch instead of silently shipping a wrongly-signed
+          # artifact (which would show up as Google Sign-In or app
+          # updates breaking for users, discovered only after release).
+          APKSIGNER=$(find "$ANDROID_HOME" -name apksigner | sort -V | tail -1)
+          echo "Using apksigner at: $APKSIGNER"
+          "$APKSIGNER" verify --print-certs build/app/outputs/flutter-apk/app-release.apk | tee release_apksigner_output.txt
+          REAL_SHA1=$(grep -oE "certificate SHA-1 digest: *[0-9a-fA-F:]+" release_apksigner_output.txt | head -1 | sed "s/.*digest: *//" | tr -d ':' | tr 'a-f' 'A-F')
+          EXPECTED_SHA1=$(keytool -list -v -keystore release.keystore -storepass "$RELEASE_KEYSTORE_PASSWORD" -alias "$RELEASE_KEY_ALIAS" | grep "SHA1:" | sed "s/.*SHA1: //" | tr -d ':' | tr 'a-f' 'A-F')
+          echo "Real RELEASE APK signing SHA-1 (no colons): $REAL_SHA1"
+          echo "Expected (from release.keystore file): $EXPECTED_SHA1"
+          if [ -z "$REAL_SHA1" ]; then
+            echo "::error::Could not extract a SHA-1 digest from apksigner's output for the release APK. Failing rather than silently skipping this check."
+            cat release_apksigner_output.txt
+            exit 1
+          fi
+          if [ "$REAL_SHA1" != "$EXPECTED_SHA1" ]; then
+            echo "::error::The ACTUAL built RELEASE APK is signed with a DIFFERENT certificate than release.keystore! This would break Google Sign-In and/or app updates for real users. Failing the build instead of shipping a mis-signed artifact."
+            exit 1
+          fi
+          echo "CONFIRMED: the built RELEASE APK's real signing certificate matches release.keystore (the upload key)."
+        env:
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+
       - name: Upload release AAB (upload this exact file to Google Play Console)
         if: steps.release_secrets.outputs.present == 'true'
         uses: actions/upload-artifact@v4
