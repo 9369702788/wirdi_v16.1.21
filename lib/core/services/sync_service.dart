@@ -167,6 +167,14 @@ class SyncService {
           'ayahs': prefs.getStringList('favorite_ayahs_all') ?? [],
           'azkar': prefs.getStringList('favorite_azkar_all') ?? [],
           'hadiths': prefs.getStringList('favorite_hadiths_all') ?? [],
+          // NEW (v121): radio station favorites are a SEPARATE feature
+          // with their own storage (RadioService's 'radio_favorites'
+          // key, a Set<String> of station ids) -- not the same list as
+          // Quran ayah / Azkar / Hadith favorites above. Found by
+          // auditing every screen the user mentioned (Quran, Azkar,
+          // Dua, Radio) individually rather than assuming "favorites"
+          // is one single feature across the app.
+          'radioStations': prefs.getStringList('radio_favorites') ?? [],
           'updatedAt': now,
         }, SetOptions(merge: true));
       }, failures);
@@ -181,7 +189,58 @@ class SyncService {
         await _doc('prayer_log').set({'byDate': byDate, 'updatedAt': now}, SetOptions(merge: true));
       }, failures);
 
-      for (final e in {'bookmarks': 'advanced_bookmarks_v1', 'khatma': 'khatma_plans_v2_json', 'tasbeeh_custom': 'tasbeeh_custom_phrases_v1'}.entries) {
+      // NEW (v120): every lifetime/streak/daily-history stat tracked by
+      // UserProgressService that ISN'T already covered above --
+      // lifetime azkar/tasbeeh/prayers counters, wird streaks, khatma
+      // completion count, completed-surahs set, and the full per-day
+      // history maps (wird pages, azkar completed, tasbeeh daily
+      // totals, fasting, dua-read) that back the 7-day activity
+      // summary and Home Dashboard percentages. Previously NONE of
+      // this synced at all -- only the per-phrase tasbeeh totals and
+      // today's prayer checklist did -- which is exactly why a second
+      // device showed 0%/empty progress widgets despite a first
+      // device having real accumulated history.
+      await _runIsolated('progress_stats', () async {
+        final wirdPagesByDate = <String, dynamic>{};
+        final azkarCompletedByDate = <String, dynamic>{};
+        final tasbeehDailyByDate = <String, dynamic>{};
+        final fastingByDate = <String, dynamic>{};
+        final duaReadByDate = <String, dynamic>{};
+        for (final key in prefs.getKeys()) {
+          if (key.startsWith('wird_pages_')) {
+            wirdPagesByDate[key.replaceFirst('wird_pages_', '')] = prefs.getInt(key) ?? 0;
+          } else if (key.startsWith('azkar_completed_')) {
+            azkarCompletedByDate[key.replaceFirst('azkar_completed_', '')] = prefs.getStringList(key) ?? [];
+          } else if (key.startsWith('tasbeeh_daily_total_')) {
+            tasbeehDailyByDate[key.replaceFirst('tasbeeh_daily_total_', '')] = prefs.getInt(key) ?? 0;
+          } else if (key.startsWith('fasting_')) {
+            fastingByDate[key.replaceFirst('fasting_', '')] = prefs.getBool(key) ?? false;
+          } else if (key.startsWith('dua_read_')) {
+            duaReadByDate[key.replaceFirst('dua_read_', '')] = prefs.getBool(key) ?? false;
+          }
+        }
+        await _doc('progress_stats').set({
+          'azkarLifetimeTotal': prefs.getInt('azkar_lifetime_total') ?? 0,
+          'tasbeehLifetimeTotal': prefs.getInt('tasbeeh_lifetime_total') ?? 0,
+          'prayersLifetimeTotal': prefs.getInt('prayers_lifetime_total') ?? 0,
+          'khatmasCompletedCount': prefs.getInt('khatmas_completed_count') ?? 0,
+          'khatmasCompletedIds': prefs.getStringList('khatmas_completed_ids') ?? [],
+          'completedSurahsAll': prefs.getStringList('completed_surahs_all') ?? [],
+          'wirdProgressPages': prefs.getInt('wird_progress_pages') ?? 0,
+          'wirdProgressDay': prefs.getString('wird_progress_day'),
+          'wirdStreak': prefs.getInt('wird_streak') ?? 0,
+          'wirdStreakLastDay': prefs.getString('wird_streak_last_day'),
+          'wirdLongestStreak': prefs.getInt('wird_longest_streak') ?? 0,
+          'wirdPagesByDate': wirdPagesByDate,
+          'azkarCompletedByDate': azkarCompletedByDate,
+          'tasbeehDailyByDate': tasbeehDailyByDate,
+          'fastingByDate': fastingByDate,
+          'duaReadByDate': duaReadByDate,
+          'updatedAt': now,
+        }, SetOptions(merge: true));
+      }, failures);
+
+      for (final e in {'bookmarks': 'advanced_bookmarks_v1', 'khatma': 'khatma_plans_v2_json', 'tasbeeh_custom': 'tasbeeh_custom_phrases_v1', 'my_duas': 'my_duas_v1'}.entries) {
         await _runIsolated(e.key, () async {
           final val = prefs.getString(e.value);
           if (val != null) await _doc(e.key).set({'data': val, 'updatedAt': now}, SetOptions(merge: true));
@@ -260,6 +319,7 @@ class SyncService {
           if (d['ayahs'] != null) await prefs.setStringList('favorite_ayahs_all', List<String>.from(d['ayahs']));
           if (d['azkar'] != null) await prefs.setStringList('favorite_azkar_all', List<String>.from(d['azkar']));
           if (d['hadiths'] != null) await prefs.setStringList('favorite_hadiths_all', List<String>.from(d['hadiths']));
+          if (d['radioStations'] != null) await prefs.setStringList('radio_favorites', List<String>.from(d['radioStations']));
         }
       }, failures);
 
@@ -273,7 +333,45 @@ class SyncService {
         }
       }, failures);
 
-      for (final e in {'bookmarks': 'advanced_bookmarks_v1', 'khatma': 'khatma_plans_v2_json', 'tasbeeh_custom': 'tasbeeh_custom_phrases_v1'}.entries) {
+      await _runIsolated('progress_stats', () async {
+        final doc = await _doc('progress_stats').get();
+        if (doc.exists) {
+          final d = doc.data()!;
+          if (d['azkarLifetimeTotal'] != null) await prefs.setInt('azkar_lifetime_total', _asInt(d['azkarLifetimeTotal']));
+          if (d['tasbeehLifetimeTotal'] != null) await prefs.setInt('tasbeeh_lifetime_total', _asInt(d['tasbeehLifetimeTotal']));
+          if (d['prayersLifetimeTotal'] != null) await prefs.setInt('prayers_lifetime_total', _asInt(d['prayersLifetimeTotal']));
+          if (d['khatmasCompletedCount'] != null) await prefs.setInt('khatmas_completed_count', _asInt(d['khatmasCompletedCount']));
+          if (d['khatmasCompletedIds'] != null) await prefs.setStringList('khatmas_completed_ids', List<String>.from(d['khatmasCompletedIds']));
+          if (d['completedSurahsAll'] != null) await prefs.setStringList('completed_surahs_all', List<String>.from(d['completedSurahsAll']));
+          if (d['wirdProgressPages'] != null) await prefs.setInt('wird_progress_pages', _asInt(d['wirdProgressPages']));
+          if (d['wirdProgressDay'] is String) await prefs.setString('wird_progress_day', d['wirdProgressDay']);
+          if (d['wirdStreak'] != null) await prefs.setInt('wird_streak', _asInt(d['wirdStreak']));
+          if (d['wirdStreakLastDay'] is String) await prefs.setString('wird_streak_last_day', d['wirdStreakLastDay']);
+          if (d['wirdLongestStreak'] != null) await prefs.setInt('wird_longest_streak', _asInt(d['wirdLongestStreak']));
+          final wirdPagesByDate = (d['wirdPagesByDate'] as Map<String, dynamic>?) ?? {};
+          for (final e in wirdPagesByDate.entries) {
+            await prefs.setInt('wird_pages_' + e.key, _asInt(e.value));
+          }
+          final azkarCompletedByDate = (d['azkarCompletedByDate'] as Map<String, dynamic>?) ?? {};
+          for (final e in azkarCompletedByDate.entries) {
+            await prefs.setStringList('azkar_completed_' + e.key, List<String>.from(e.value ?? []));
+          }
+          final tasbeehDailyByDate = (d['tasbeehDailyByDate'] as Map<String, dynamic>?) ?? {};
+          for (final e in tasbeehDailyByDate.entries) {
+            await prefs.setInt('tasbeeh_daily_total_' + e.key, _asInt(e.value));
+          }
+          final fastingByDate = (d['fastingByDate'] as Map<String, dynamic>?) ?? {};
+          for (final e in fastingByDate.entries) {
+            if (e.value is bool) await prefs.setBool('fasting_' + e.key, e.value);
+          }
+          final duaReadByDate = (d['duaReadByDate'] as Map<String, dynamic>?) ?? {};
+          for (final e in duaReadByDate.entries) {
+            if (e.value is bool) await prefs.setBool('dua_read_' + e.key, e.value);
+          }
+        }
+      }, failures);
+
+      for (final e in {'bookmarks': 'advanced_bookmarks_v1', 'khatma': 'khatma_plans_v2_json', 'tasbeeh_custom': 'tasbeeh_custom_phrases_v1', 'my_duas': 'my_duas_v1'}.entries) {
         await _runIsolated(e.key, () async {
           final doc = await _doc(e.key).get();
           if (doc.exists && doc.data()!['data'] != null) await prefs.setString(e.value, doc.data()!['data']);
@@ -456,8 +554,8 @@ class SyncService {
   Future<void> deleteAllCloudData() async {
     if (_uid == null) return;
     final collections = [
-      'settings', 'quran_progress', 'tasbeeh',
-      'favorites', 'bookmarks', 'khatma', 'prayer_log', 'profile', 'tasbeeh_custom',
+      'settings', 'quran_progress', 'tasbeeh', 'progress_stats',
+      'favorites', 'bookmarks', 'khatma', 'prayer_log', 'profile', 'tasbeeh_custom', 'my_duas',
     ];
     for (final col in collections) {
       try {

@@ -19,6 +19,15 @@ class _RadioScreenState extends State<RadioScreen>
   late TabController _tabs;
   final _cats = ['all', 'quran', 'prayers', 'lectures', 'nasheed'];
 
+  // FEATURE: station search -- when active, results are filtered by
+  // name (Arabic or English) across ALL categories at once, ignoring
+  // the currently selected tab, since a user searching for a specific
+  // station by name usually doesn't know (or care) which category tab
+  // it's filed under.
+  bool _searching = false;
+  final _searchController = TextEditingController();
+  String _query = '';
+
   @override
   void initState() {
     super.initState();
@@ -26,11 +35,37 @@ class _RadioScreenState extends State<RadioScreen>
     RadioService.instance.init();
   }
 
-  @override void dispose() { _tabs.dispose(); super.dispose(); }
+  @override
+  void dispose() {
+    _tabs.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
 
   List<RadioStation> _stationsFor(String cat, List<RadioStation> all) {
     if (cat == 'all') return all;
     return all.where((s) => s.category == cat).toList();
+  }
+
+  List<RadioStation> _searchResults(List<RadioStation> all) {
+    final q = _query.trim().toLowerCase();
+    if (q.isEmpty) return all;
+    return all.where((s) =>
+        s.nameAr.toLowerCase().contains(q) ||
+        s.nameEn.toLowerCase().contains(q) ||
+        s.country.toLowerCase().contains(q)).toList();
+  }
+
+  void _startSearch() {
+    setState(() => _searching = true);
+  }
+
+  void _stopSearch() {
+    setState(() {
+      _searching = false;
+      _query = '';
+      _searchController.clear();
+    });
   }
 
   String _catLabel(String cat, AppLocalizations l) {
@@ -44,8 +79,33 @@ class _RadioScreenState extends State<RadioScreen>
     final l = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(l.radioTitle),
+        title: _searching
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                textDirection: TextDirection.rtl,
+                decoration: InputDecoration(
+                  hintText: l.radioSearchHint,
+                  border: InputBorder.none,
+                ),
+                style: Theme.of(context).appBarTheme.titleTextStyle ??
+                    const TextStyle(fontSize: 18),
+                onChanged: (v) => setState(() => _query = v),
+              )
+            : Text(l.radioTitle),
         actions: [
+          if (_searching)
+            IconButton(
+              tooltip: l.commonCancel,
+              icon: const Icon(Icons.close),
+              onPressed: _stopSearch,
+            )
+          else
+            IconButton(
+              tooltip: l.radioSearchTooltip,
+              icon: const Icon(Icons.search),
+              onPressed: _startSearch,
+            ),
           // Refresh button
           ListenableBuilder(
             listenable: RadioService.instance,
@@ -88,12 +148,14 @@ class _RadioScreenState extends State<RadioScreen>
             onPressed: () => _showFavs(context, l),
           ),
         ],
-        bottom: TabBar(
-          controller: _tabs,
-          isScrollable: true,
-          tabAlignment: TabAlignment.start,
-          tabs: _cats.map((c) => Tab(text: _catLabel(c, l))).toList(),
-        ),
+        bottom: _searching
+            ? null
+            : TabBar(
+                controller: _tabs,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                tabs: _cats.map((c) => Tab(text: _catLabel(c, l))).toList(),
+              ),
       ),
       body: ListenableBuilder(
         listenable: RadioService.instance,
@@ -129,49 +191,79 @@ class _RadioScreenState extends State<RadioScreen>
             // Now playing banner
             if (svc.currentStation != null) _NowPlayingBanner(svc: svc, l: l),
 
-            // Station list
+            // Station list -- while searching, a single flat
+            // cross-category list of matches; otherwise the normal
+            // per-tab TabBarView.
             Expanded(
               child: stations.isEmpty && svc.loadingLive
                   ? const Center(child: CircularProgressIndicator())
-                  : TabBarView(
-                      controller: _tabs,
-                      children: _cats.map((cat) {
-                        final list = _stationsFor(cat, stations);
-                        if (list.isEmpty) {
-                          return Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.radio_outlined,
-                                    size: 48, color: Colors.grey),
-                                const SizedBox(height: 8),
-                                Text(l.radioNoStations,
-                                    style: const TextStyle(color: Colors.grey)),
-                                const SizedBox(height: 16),
-                                TextButton.icon(
-                                  icon: const Icon(Icons.refresh),
-                                  label: Text(l.commonRetry),
-                                  onPressed: () => svc.refreshStations(),
+                  : _searching
+                      ? _buildSearchResults(stations, l)
+                      : TabBarView(
+                          controller: _tabs,
+                          children: _cats.map((cat) {
+                            final list = _stationsFor(cat, stations);
+                            if (list.isEmpty) {
+                              return Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.radio_outlined,
+                                        size: 48, color: Colors.grey),
+                                    const SizedBox(height: 8),
+                                    Text(l.radioNoStations,
+                                        style: const TextStyle(color: Colors.grey)),
+                                    const SizedBox(height: 16),
+                                    TextButton.icon(
+                                      icon: const Icon(Icons.refresh),
+                                      label: Text(l.commonRetry),
+                                      onPressed: () => svc.refreshStations(),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          );
-                        }
-                        return RefreshIndicator(
-                          onRefresh: () => svc.refreshStations(),
-                          child: ListView.builder(
-                            padding: const EdgeInsets.only(bottom: 100),
-                            itemCount: list.length,
-                            itemBuilder: (_, i) =>
-                                RadioStationTile(station: list[i]),
-                          ),
-                        );
-                      }).toList(),
-                    ),
+                              );
+                            }
+                            return RefreshIndicator(
+                              onRefresh: () => svc.refreshStations(),
+                              child: ListView.builder(
+                                padding: const EdgeInsets.only(bottom: 100),
+                                itemCount: list.length,
+                                itemBuilder: (_, i) =>
+                                    RadioStationTile(station: list[i]),
+                              ),
+                            );
+                          }).toList(),
+                        ),
             ),
           ]);
         },
       ),
+    );
+  }
+
+  Widget _buildSearchResults(List<RadioStation> stations, AppLocalizations l) {
+    final results = _searchResults(stations);
+    if (_query.trim().isEmpty) {
+      return Center(
+        child: Text(l.radioSearchHint, style: const TextStyle(color: Colors.grey)),
+      );
+    }
+    if (results.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.search_off_rounded, size: 48, color: Colors.grey),
+            const SizedBox(height: 8),
+            Text(l.radioSearchNoResults, style: const TextStyle(color: Colors.grey)),
+          ],
+        ),
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.only(bottom: 100),
+      itemCount: results.length,
+      itemBuilder: (_, i) => RadioStationTile(station: results[i]),
     );
   }
 

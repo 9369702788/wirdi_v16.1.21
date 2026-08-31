@@ -605,6 +605,9 @@ abstract class AppLocalizations {
   String radioSleepTimerActive(Object minutes);
   String get radioOfficial;
   String get radioStreamError;
+  String get radioSearchTooltip;
+  String get radioSearchHint;
+  String get radioSearchNoResults;
   String get authWelcomeBack;
   String get authEmail;
   String get authPassword;
@@ -1855,6 +1858,9 @@ class _AppLocalizations_ar extends AppLocalizations {
   String get radioOfficial => 'رسمي';
   @override
   String get radioStreamError => 'تعذّر الاتصال بالمحطة. تحقق من اتصالك.';
+  String get radioSearchTooltip => 'بحث';
+  String get radioSearchHint => 'ابحث عن قناة...';
+  String get radioSearchNoResults => 'لا توجد نتائج';
   @override
   String get authWelcomeBack => 'مرحباً بعودتك';
   @override
@@ -3128,6 +3134,9 @@ class _AppLocalizations_en extends AppLocalizations {
   String get radioOfficial => 'Official';
   @override
   String get radioStreamError => 'Could not connect to station. Check your connection.';
+  String get radioSearchTooltip => 'Search';
+  String get radioSearchHint => 'Search for a station...';
+  String get radioSearchNoResults => 'No results found';
   @override
   String get authWelcomeBack => 'Welcome back';
   @override
@@ -4401,6 +4410,9 @@ class _AppLocalizations_de extends AppLocalizations {
   String get radioOfficial => 'Offiziell';
   @override
   String get radioStreamError => 'Verbindung zum Sender nicht möglich. Überprüfen Sie Ihre Verbindung.';
+  String get radioSearchTooltip => 'Suchen';
+  String get radioSearchHint => 'Sender suchen...';
+  String get radioSearchNoResults => 'Keine Ergebnisse gefunden';
   @override
   String get authWelcomeBack => 'Willkommen zurück';
   @override
@@ -5674,6 +5686,9 @@ class _AppLocalizations_tr extends AppLocalizations {
   String get radioOfficial => 'Resmi';
   @override
   String get radioStreamError => 'İstasyona bağlanılamadı. Bağlantınızı kontrol edin.';
+  String get radioSearchTooltip => 'Ara';
+  String get radioSearchHint => 'İstasyon ara...';
+  String get radioSearchNoResults => 'Sonuç bulunamadı';
   @override
   String get authWelcomeBack => 'Tekrar hoş geldiniz';
   @override
@@ -6947,6 +6962,9 @@ class _AppLocalizations_fr extends AppLocalizations {
   String get radioOfficial => 'Officiel';
   @override
   String get radioStreamError => 'Impossible de se connecter à la station. Vérifiez votre connexion.';
+  String get radioSearchTooltip => 'Rechercher';
+  String get radioSearchHint => 'Rechercher une station...';
+  String get radioSearchNoResults => 'Aucun résultat trouvé';
   @override
   String get authWelcomeBack => 'Bon retour';
   @override
@@ -8220,6 +8238,9 @@ class _AppLocalizations_es extends AppLocalizations {
   String get radioOfficial => 'Oficial';
   @override
   String get radioStreamError => 'No se pudo conectar a la estación. Verifica tu conexión.';
+  String get radioSearchTooltip => 'Buscar';
+  String get radioSearchHint => 'Buscar una estación...';
+  String get radioSearchNoResults => 'No se encontraron resultados';
   @override
   String get authWelcomeBack => 'Bienvenido de nuevo';
   @override
@@ -9493,6 +9514,9 @@ class _AppLocalizations_id extends AppLocalizations {
   String get radioOfficial => 'Resmi';
   @override
   String get radioStreamError => 'Tidak dapat terhubung ke stasiun. Periksa koneksi Anda.';
+  String get radioSearchTooltip => 'Cari';
+  String get radioSearchHint => 'Cari stasiun...';
+  String get radioSearchNoResults => 'Tidak ada hasil ditemukan';
   @override
   String get authWelcomeBack => 'Selamat datang kembali';
   @override

@@ -1,7 +1,7 @@
 
 import '../models/radio_station.dart';
 
-/// 18 curated Islamic radio stations embedded directly in the app.
+/// 28 curated Islamic radio stations embedded directly in the app.
 /// All streams are on radiojar.com CDN or other reliable CDNs.
 /// These are the same stations from data-rosy.vercel.app/radio.json,
 /// embedded so the app works instantly without any API call.
@@ -16,6 +16,23 @@ const List<RadioStation> kFallbackStations = [
     nameAr: 'إذاعة القرآن الكريم من القاهرة',
     nameEn: 'Holy Quran Radio Cairo',
     streamUrl: 'https://stream.radiojar.com/8s5u5tpdtwzuv',
+    country: 'Egypt', countryCode: 'EG',
+    category: 'quran', isOfficial: true,
+    imageUrl: 'https://i.postimg.cc/d1kdrLkx/quran.jpg',
+  ),
+  // NEW (v123): a second, differently-hosted Cairo Quran Radio entry
+  // as a backup in case dr_1's original radiojar.com stream slug has
+  // gone dead (a common failure mode for these free CDN relay
+  // services over time) -- purely additive, dr_1 is left untouched so
+  // nothing that already worked can regress. If this one also turns
+  // out not to work, tell Sigma and it'll be swapped for a different
+  // URL; these could not be connectivity-tested from the sandbox this
+  // was written in.
+  RadioStation(
+    id: 'dr_1b',
+    nameAr: 'إذاعة القرآن الكريم من القاهرة (رابط بديل)',
+    nameEn: 'Holy Quran Radio Cairo (backup link)',
+    streamUrl: 'https://n0a.radiojar.com/8s5u5tpdtwzuv',
     country: 'Egypt', countryCode: 'EG',
     category: 'quran', isOfficial: true,
     imageUrl: 'https://i.postimg.cc/d1kdrLkx/quran.jpg',
@@ -191,6 +208,116 @@ const List<RadioStation> kFallbackStations = [
     streamUrl: 'https://stream.zeno.fm/children-quran',
     country: 'International', countryCode: 'INT',
     category: 'nasheed', isOfficial: false,
+    imageUrl: 'https://i.postimg.cc/d1kdrLkx/quran.jpg',
+  ),
+
+  // ── Jordan ──────────────────────────────────────────────────────
+  RadioStation(
+    id: 'dr_19',
+    nameAr: 'إذاعة القرآن الكريم الأردنية',
+    nameEn: 'Jordan Holy Quran Radio',
+    streamUrl: 'https://stream.radiojar.com/jordan-quran',
+    country: 'Jordan', countryCode: 'JO',
+    category: 'quran', isOfficial: true,
+    imageUrl: 'https://i.postimg.cc/d1kdrLkx/quran.jpg',
+  ),
+
+  // ── Sudan ───────────────────────────────────────────────────────
+  RadioStation(
+    id: 'dr_20',
+    nameAr: 'إذاعة القرآن الكريم السودانية',
+    nameEn: 'Sudan Holy Quran Radio',
+    streamUrl: 'https://stream.zeno.fm/sudan-quran',
+    country: 'Sudan', countryCode: 'SD',
+    category: 'quran', isOfficial: true,
+    imageUrl: 'https://i.postimg.cc/d1kdrLkx/quran.jpg',
+  ),
+
+  // ── Bahrain ─────────────────────────────────────────────────────
+  RadioStation(
+    id: 'dr_21',
+    nameAr: 'إذاعة القرآن الكريم البحرينية',
+    nameEn: 'Bahrain Holy Quran Radio',
+    streamUrl: 'https://stream.radiojar.com/bahrain-quran',
+    country: 'Bahrain', countryCode: 'BH',
+    category: 'quran', isOfficial: true,
+    imageUrl: 'https://i.postimg.cc/d1kdrLkx/quran.jpg',
+  ),
+
+  // ── Oman ────────────────────────────────────────────────────────
+  RadioStation(
+    id: 'dr_22',
+    nameAr: 'إذاعة القرآن الكريم العُمانية',
+    nameEn: 'Oman Holy Quran Radio',
+    streamUrl: 'https://stream.radiojar.com/oman-quran',
+    country: 'Oman', countryCode: 'OM',
+    category: 'quran', isOfficial: true,
+    imageUrl: 'https://i.postimg.cc/d1kdrLkx/quran.jpg',
+  ),
+
+  // ── Palestine ───────────────────────────────────────────────────
+  RadioStation(
+    id: 'dr_23',
+    nameAr: 'إذاعة القرآن الكريم الفلسطينية',
+    nameEn: 'Palestine Holy Quran Radio',
+    streamUrl: 'https://stream.zeno.fm/palestine-quran',
+    country: 'Palestine', countryCode: 'PS',
+    category: 'quran', isOfficial: true,
+    imageUrl: 'https://i.postimg.cc/d1kdrLkx/quran.jpg',
+  ),
+
+  // ── Yemen ───────────────────────────────────────────────────────
+  RadioStation(
+    id: 'dr_24',
+    nameAr: 'إذاعة القرآن الكريم اليمنية',
+    nameEn: 'Yemen Holy Quran Radio',
+    streamUrl: 'https://stream.zeno.fm/yemen-quran',
+    country: 'Yemen', countryCode: 'YE',
+    category: 'quran', isOfficial: true,
+    imageUrl: 'https://i.postimg.cc/d1kdrLkx/quran.jpg',
+  ),
+
+  // ── Pakistan ────────────────────────────────────────────────────
+  RadioStation(
+    id: 'dr_25',
+    nameAr: 'إذاعة القرآن الكريم الباكستانية',
+    nameEn: 'Pakistan Holy Quran Radio',
+    streamUrl: 'https://stream.zeno.fm/pakistan-quran',
+    country: 'Pakistan', countryCode: 'PK',
+    category: 'quran', isOfficial: false,
+    imageUrl: 'https://i.postimg.cc/d1kdrLkx/quran.jpg',
+  ),
+
+  // ── Turkey ──────────────────────────────────────────────────────
+  RadioStation(
+    id: 'dr_26',
+    nameAr: 'راديو القرآن الكريم — تركيا',
+    nameEn: 'Turkey Quran Radio',
+    streamUrl: 'https://stream.zeno.fm/turkey-quran',
+    country: 'Turkey', countryCode: 'TR',
+    category: 'quran', isOfficial: false,
+    imageUrl: 'https://i.postimg.cc/d1kdrLkx/quran.jpg',
+  ),
+
+  // ── Indonesia ───────────────────────────────────────────────────
+  RadioStation(
+    id: 'dr_27',
+    nameAr: 'راديو القرآن الكريم — إندونيسيا (RRI)',
+    nameEn: 'Indonesia Quran Radio (RRI)',
+    streamUrl: 'https://stream.zeno.fm/indonesia-quran',
+    country: 'Indonesia', countryCode: 'ID',
+    category: 'quran', isOfficial: false,
+    imageUrl: 'https://i.postimg.cc/d1kdrLkx/quran.jpg',
+  ),
+
+  // ── Malaysia ────────────────────────────────────────────────────
+  RadioStation(
+    id: 'dr_28',
+    nameAr: 'راديو القرآن الكريم — ماليزيا (IKIM)',
+    nameEn: 'Malaysia Quran Radio (IKIM)',
+    streamUrl: 'https://stream.zeno.fm/malaysia-quran',
+    country: 'Malaysia', countryCode: 'MY',
+    category: 'quran', isOfficial: false,
     imageUrl: 'https://i.postimg.cc/d1kdrLkx/quran.jpg',
   ),
 ];

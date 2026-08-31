@@ -40,7 +40,7 @@ class AppColors {
 /// the app's original look exactly (same values as [AppColors]) so
 /// existing users see zero visual change unless they deliberately pick
 /// a different theme.
-enum AppColorTheme { emerald, ocean, ruby, amethyst, manuscript }
+enum AppColorTheme { emerald, ocean, ruby, amethyst, manuscript, classicQuran, sageCalm, warmSand, softBlue, pureMinimal }
 
 /// One theme's full visual identity: colors, card shape, and
 /// (optionally) a distinct font family. [fontFamily] is null for most
@@ -146,6 +146,76 @@ class AppTheme {
       darkCard: Color(0xFF2B2013),
       cardRadius: 8,
       fontFamily: 'AmiriQuran',
+    ),
+    // NEW (v126): a full "calm design system" per an explicit design
+    // brief -- five deliberately low-saturation, non-neon themes
+    // (replacing the earlier ad-hoc v125 "Sage" entry with a more
+    // precisely-specified "Sage Calm"), each restricted to the
+    // requested palette family (off-white/ivory/cream/warm-gray/sage/
+    // muted-green/soft-teal/charcoal/soft-brown) and each with a
+    // coordinated dark variant that avoids pure black. Purely
+    // additive to the existing theme system -- same
+    // AppThemeDefinition shape, same light()/dark() builders below,
+    // zero change to any existing theme or to app functionality.
+    AppColorTheme.classicQuran: AppThemeDefinition(
+      displayNameByLocale: {
+        'ar': 'القرآن الكلاسيكي', 'en': 'Classic Quran', 'de': 'Klassischer Koran', 'tr': 'Klasik Kuran',
+        'fr': 'Coran classique', 'es': 'Corán clásico', 'id': 'Quran Klasik',
+      },
+      primary: Color(0xFF5F7A61),
+      accent: Color(0xFFC9B896),
+      lightBackground: Color(0xFFFBF9F4),
+      darkBackground: Color(0xFF1E2420),
+      darkCard: Color(0xFF2A322C),
+      cardRadius: 16,
+    ),
+    AppColorTheme.sageCalm: AppThemeDefinition(
+      displayNameByLocale: {
+        'ar': 'نعناعي هادئ', 'en': 'Sage Calm', 'de': 'Ruhiger Salbei', 'tr': 'Sakin Adaçayı',
+        'fr': 'Sauge apaisante', 'es': 'Salvia tranquila', 'id': 'Sage Tenang',
+      },
+      primary: Color(0xFF7C9473),
+      accent: Color(0xFFB7C4A8),
+      lightBackground: Color(0xFFF6F8F4),
+      darkBackground: Color(0xFF1B231C),
+      darkCard: Color(0xFF232D24),
+      cardRadius: 20,
+    ),
+    AppColorTheme.warmSand: AppThemeDefinition(
+      displayNameByLocale: {
+        'ar': 'رملي دافئ', 'en': 'Warm Sand', 'de': 'Warmer Sand', 'tr': 'Sıcak Kum',
+        'fr': 'Sable chaud', 'es': 'Arena cálida', 'id': 'Pasir Hangat',
+      },
+      primary: Color(0xFFA67C52),
+      accent: Color(0xFFD9C7A3),
+      lightBackground: Color(0xFFF7F0E3),
+      darkBackground: Color(0xFF241C14),
+      darkCard: Color(0xFF32271B),
+      cardRadius: 14,
+    ),
+    AppColorTheme.softBlue: AppThemeDefinition(
+      displayNameByLocale: {
+        'ar': 'أزرق هادئ', 'en': 'Soft Blue', 'de': 'Sanftes Blau', 'tr': 'Yumuşak Mavi',
+        'fr': 'Bleu doux', 'es': 'Azul suave', 'id': 'Biru Lembut',
+      },
+      primary: Color(0xFF5B8A93),
+      accent: Color(0xFFAFC7CC),
+      lightBackground: Color(0xFFF1F5F6),
+      darkBackground: Color(0xFF16232A),
+      darkCard: Color(0xFF1F2F37),
+      cardRadius: 18,
+    ),
+    AppColorTheme.pureMinimal: AppThemeDefinition(
+      displayNameByLocale: {
+        'ar': 'بسيط تمامًا', 'en': 'Pure Minimal', 'de': 'Rein Minimal', 'tr': 'Saf Minimal',
+        'fr': 'Pur minimal', 'es': 'Minimalismo puro', 'id': 'Minimal Murni',
+      },
+      primary: Color(0xFF6B8F71),
+      accent: Color(0xFFDADAD6),
+      lightBackground: Color(0xFFFCFCFB),
+      darkBackground: Color(0xFF17191A),
+      darkCard: Color(0xFF212425),
+      cardRadius: 12,
     ),
   };
 

@@ -234,6 +234,49 @@ class NotificationService {
     }
   }
 
+  /// NEW: schedules (does NOT show immediately) a diagnostic
+  /// notification ~1 minute in the future, using the EXACT SAME
+  /// zonedSchedule() + exactAllowWhileIdle mechanism real prayer/daily
+  /// reminders use -- but self-contained and immediate to test, so it
+  /// proves or disproves "does scheduled delivery even work on this
+  /// device" within one minute, instead of needing to wait for a real
+  /// prayer time or daily reminder to (maybe) fire. If
+  /// [showTestNotification] works but this never arrives ~1 minute
+  /// later, the fault is isolated specifically to zonedSchedule()/
+  /// exact-alarm delivery on this device/ROM, not to permissions,
+  /// channels, or this app's own reminder-computation logic (which
+  /// never even runs for this test).
+  static Future<String?> scheduleTestNotificationSoon() async {
+    await initialize();
+    await _ensureTimezone();
+    const androidDetails = AndroidNotificationDetails(
+      _testChannelId,
+      _testChannelName,
+      channelDescription: 'Manual diagnostic test notifications',
+      importance: Importance.max,
+      priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
+    );
+    const details = NotificationDetails(android: androidDetails, iOS: DarwinNotificationDetails(presentSound: true));
+    final fireAt = DateTime.now().add(const Duration(minutes: 1));
+    final tzTime = tz.TZDateTime.from(fireAt, tz.UTC);
+    try {
+      await _plugin.zonedSchedule(
+        999998,
+        'Wirdi scheduled test',
+        'If you see this about 1 minute after tapping the button, scheduled notifications DO work on this device.',
+        tzTime,
+        details,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      );
+      return null;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
   /// Fires an immediate notification through the SAME channel and the
   /// SAME real bundled Adhan audio resource used for actual prayer-time
   /// notifications -- lets the Adhan sound specifically be verified

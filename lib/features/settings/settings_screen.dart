@@ -207,7 +207,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // end user to see in Settings. Debug builds only now.
                 child: kDebugMode
                     ? const Text(
-                        'Merge build: v119-2026-08-31-fix-settings-type-mismatch',
+                        'Merge build: v126-2026-08-31-calm-theme-system',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                       )
@@ -541,6 +541,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(error == null
                           ? 'Test notification sent -- check your notification shade now.'
+                          : 'Failed: ' + error)),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.schedule_send_outlined, color: AppColors.primaryEmerald),
+                  title: const Text('Schedule test notification in 1 minute'),
+                  subtitle: const Text('Diagnostic: proves whether SCHEDULED notifications (like Adhan/reminders) can actually fire on this device -- lock your screen and wait 1 minute after tapping'),
+                  onTap: () async {
+                    await NotificationService.requestPermission();
+                    final error = await NotificationService.scheduleTestNotificationSoon();
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(error == null
+                          ? 'Scheduled -- lock your screen now and wait about 1 minute.'
                           : 'Failed: ' + error)),
                     );
                   },
