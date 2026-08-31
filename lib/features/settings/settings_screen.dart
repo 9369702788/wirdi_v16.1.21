@@ -207,7 +207,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // end user to see in Settings. Debug builds only now.
                 child: kDebugMode
                     ? const Text(
-                        'Merge build: v118-2026-08-31-fix-sync-key-mismatch',
+                        'Merge build: v119-2026-08-31-fix-settings-type-mismatch',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                       )

@@ -209,10 +209,26 @@ class SyncService {
         final s = await _doc('settings').get();
         if (s.exists) {
           final d = s.data()!;
-          if (d['themeMode'] != null) await prefs.setString('settings_theme_mode', d['themeMode']);
-          if (d['colorTheme'] != null) await prefs.setString('settings_color_theme', d['colorTheme']);
-          if (d['locale'] != null) await prefs.setString('settings_locale', d['locale']);
-          if (d['fontScale'] != null) await prefs.setDouble('settings_font_scale', (d['fontScale'] as num).toDouble());
+          // FIX: 'themeMode' kept the SAME Firestore field name across
+          // the v118 key-mapping rewrite, but its TYPE changed (used to
+          // be an int written by the old, wrong-key code; is a String
+          // now). A device that had ever synced with the pre-v118 code
+          // left an int-typed 'themeMode' sitting in Firestore -- a
+          // bare `d['themeMode']` passed straight to setString() then
+          // throws a real TypeError ("type 'int' is not a subtype of
+          // type 'String'") the instant a v118+ device downloads that
+          // stale document, landing this whole section in
+          // PartialSyncException ("Sync completed with errors in:
+          // settings") despite nothing being conceptually wrong with
+          // the NEW code by itself. Type-checking each field before
+          // assigning means old, differently-typed leftover data is
+          // safely skipped (as if absent) instead of crashing --
+          // the next successful upload from either device overwrites
+          // it with the correct type regardless.
+          if (d['themeMode'] is String) await prefs.setString('settings_theme_mode', d['themeMode']);
+          if (d['colorTheme'] is String) await prefs.setString('settings_color_theme', d['colorTheme']);
+          if (d['locale'] is String) await prefs.setString('settings_locale', d['locale']);
+          if (d['fontScale'] is num) await prefs.setDouble('settings_font_scale', (d['fontScale'] as num).toDouble());
           if (d['wirdTarget'] != null) await prefs.setInt('wird_target_pages', _asInt(d['wirdTarget']));
         }
       }, failures);
@@ -222,7 +238,7 @@ class SyncService {
         if (q.exists) {
           final d = q.data()!;
           if (d['lastSurahNumber'] != null) await prefs.setInt('last_surah_number', _asInt(d['lastSurahNumber']));
-          if (d['lastSurahName'] != null) await prefs.setString('last_surah_name', d['lastSurahName']);
+          if (d['lastSurahName'] is String) await prefs.setString('last_surah_name', d['lastSurahName']);
           if (d['lastAyahNumber'] != null) await prefs.setInt('last_ayah_number', _asInt(d['lastAyahNumber']));
           if (d['lifetimePagesTotal'] != null) await prefs.setInt('wird_lifetime_pages_total', _asInt(d['lifetimePagesTotal']));
         }
