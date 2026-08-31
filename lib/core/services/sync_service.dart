@@ -85,6 +85,33 @@ class SyncService {
     }
   }
 
+  /// ROOT CAUSE FIX: every section below except "tasbeeh" was reading
+  /// SharedPreferences keys that DO NOT MATCH what the real owning
+  /// service actually uses -- e.g. this used to read
+  /// 'theme_mode'/'locale'/'font_size' while settings_service.dart
+  /// actually stores 'settings_theme_mode'/'settings_locale'/
+  /// 'settings_font_scale'; 'favorites_data' doesn't exist anywhere
+  /// (real favorites are THREE separate lists: favorite_ayahs_all/
+  /// favorite_azkar_all/favorite_hadiths_all in
+  /// user_progress_service.dart); 'bookmarks_data' should be
+  /// 'advanced_bookmarks_v1'; 'khatma_plans_v2' should be
+  /// 'khatma_plans_v2_json'; 'last_reading_surah'/'last_reading_ayah'/
+  /// 'total_pages_read' should be 'last_surah_number'/
+  /// 'last_ayah_number'/'wird_lifetime_pages_total'; and
+  /// 'prayer_log_data' doesn't exist at all -- real prayer history is
+  /// stored per-day under keys like 'prayed_2026-08-31'. Every one of
+  /// these mismatches meant uploadAll() always read a key that was
+  /// null/default and wrote a Firestore field nothing ever read back
+  /// correctly -- sync silently did nothing for that section on every
+  /// run, without ever throwing an error, since a missing local key
+  /// just resolves to a harmless-looking default. "tasbeeh" was the
+  /// ONE section that already happened to use the real key prefix
+  /// ('tasbeeh_total_'), which is exactly why it was the only thing
+  /// that ever actually synced. The fake "achievements" section is
+  /// removed entirely -- 'unlocked_achievements' was never written by
+  /// any real feature; achievements are computed live from
+  /// already-synced stats (see achievement_service.dart), so they
+  /// don't need their own sync section.
   Future<void> uploadAll() async {
     if (_uid == null) throw NotSignedInException();
     _syncing = true;
@@ -95,9 +122,10 @@ class SyncService {
 
       await _runIsolated('settings', () async {
         await _doc('settings').set({
-          'themeMode': prefs.getInt('theme_mode') ?? 0,
-          'locale': prefs.getString('locale') ?? 'ar',
-          'fontSize': prefs.getDouble('font_size') ?? 1.0,
+          'themeMode': prefs.getString('settings_theme_mode') ?? 'system',
+          'colorTheme': prefs.getString('settings_color_theme') ?? 'emerald',
+          'locale': prefs.getString('settings_locale') ?? 'ar',
+          'fontScale': prefs.getDouble('settings_font_scale') ?? 1.0,
           'wirdTarget': prefs.getInt('wird_target_pages') ?? 5,
           'updatedAt': now,
         }, SetOptions(merge: true));
@@ -105,9 +133,10 @@ class SyncService {
 
       await _runIsolated('quran_progress', () async {
         await _doc('quran_progress').set({
-          'lastSurah': prefs.getInt('last_reading_surah'),
-          'lastAyah': prefs.getInt('last_reading_ayah'),
-          'totalPagesRead': prefs.getInt('total_pages_read') ?? 0,
+          'lastSurahNumber': prefs.getInt('last_surah_number'),
+          'lastSurahName': prefs.getString('last_surah_name'),
+          'lastAyahNumber': prefs.getInt('last_ayah_number'),
+          'lifetimePagesTotal': prefs.getInt('wird_lifetime_pages_total') ?? 0,
           'updatedAt': now,
         }, SetOptions(merge: true));
       }, failures);
@@ -126,10 +155,6 @@ class SyncService {
         await _doc('tasbeeh').set({'phrases': tasbeehData, 'grandTotal': grandTotal, 'updatedAt': now}, SetOptions(merge: true));
       }, failures);
 
-      await _runIsolated('achievements', () async {
-        await _doc('achievements').set({'unlockedIds': prefs.getStringList('unlocked_achievements') ?? [], 'updatedAt': now}, SetOptions(merge: true));
-      }, failures);
-
       await _runIsolated('profile', () async {
         final user = FirebaseAuth.instance.currentUser;
         if (user != null) {
@@ -137,7 +162,26 @@ class SyncService {
         }
       }, failures);
 
-      for (final e in {'favorites': 'favorites_data', 'bookmarks': 'bookmarks_data', 'khatma': 'khatma_plans_v2', 'prayer_log': 'prayer_log_data', 'tasbeeh_custom': 'tasbeeh_custom_phrases_v1'}.entries) {
+      await _runIsolated('favorites', () async {
+        await _doc('favorites').set({
+          'ayahs': prefs.getStringList('favorite_ayahs_all') ?? [],
+          'azkar': prefs.getStringList('favorite_azkar_all') ?? [],
+          'hadiths': prefs.getStringList('favorite_hadiths_all') ?? [],
+          'updatedAt': now,
+        }, SetOptions(merge: true));
+      }, failures);
+
+      await _runIsolated('prayer_log', () async {
+        final byDate = <String, dynamic>{};
+        for (final key in prefs.getKeys()) {
+          if (key.startsWith('prayed_')) {
+            byDate[key.replaceFirst('prayed_', '')] = prefs.getStringList(key) ?? [];
+          }
+        }
+        await _doc('prayer_log').set({'byDate': byDate, 'updatedAt': now}, SetOptions(merge: true));
+      }, failures);
+
+      for (final e in {'bookmarks': 'advanced_bookmarks_v1', 'khatma': 'khatma_plans_v2_json', 'tasbeeh_custom': 'tasbeeh_custom_phrases_v1'}.entries) {
         await _runIsolated(e.key, () async {
           final val = prefs.getString(e.value);
           if (val != null) await _doc(e.key).set({'data': val, 'updatedAt': now}, SetOptions(merge: true));
@@ -150,6 +194,10 @@ class SyncService {
     } finally { _syncing = false; }
   }
 
+  /// Mirror-image fix of [uploadAll]'s ROOT CAUSE FIX -- see its doc
+  /// comment for the full explanation of the key mismatches this
+  /// corrects. Also drops the fake "achievements" download (nothing
+  /// real ever wrote that key -- see achievement_service.dart).
   Future<void> downloadAll() async {
     if (_uid == null) throw NotSignedInException();
     _syncing = true;
@@ -161,9 +209,10 @@ class SyncService {
         final s = await _doc('settings').get();
         if (s.exists) {
           final d = s.data()!;
-          if (d['themeMode'] != null) await prefs.setInt('theme_mode', _asInt(d['themeMode']));
-          if (d['locale'] != null) await prefs.setString('locale', d['locale']);
-          if (d['fontSize'] != null) await prefs.setDouble('font_size', (d['fontSize'] as num).toDouble());
+          if (d['themeMode'] != null) await prefs.setString('settings_theme_mode', d['themeMode']);
+          if (d['colorTheme'] != null) await prefs.setString('settings_color_theme', d['colorTheme']);
+          if (d['locale'] != null) await prefs.setString('settings_locale', d['locale']);
+          if (d['fontScale'] != null) await prefs.setDouble('settings_font_scale', (d['fontScale'] as num).toDouble());
           if (d['wirdTarget'] != null) await prefs.setInt('wird_target_pages', _asInt(d['wirdTarget']));
         }
       }, failures);
@@ -172,9 +221,10 @@ class SyncService {
         final q = await _doc('quran_progress').get();
         if (q.exists) {
           final d = q.data()!;
-          if (d['lastSurah'] != null) await prefs.setInt('last_reading_surah', _asInt(d['lastSurah']));
-          if (d['lastAyah'] != null) await prefs.setInt('last_reading_ayah', _asInt(d['lastAyah']));
-          if (d['totalPagesRead'] != null) await prefs.setInt('total_pages_read', _asInt(d['totalPagesRead']));
+          if (d['lastSurahNumber'] != null) await prefs.setInt('last_surah_number', _asInt(d['lastSurahNumber']));
+          if (d['lastSurahName'] != null) await prefs.setString('last_surah_name', d['lastSurahName']);
+          if (d['lastAyahNumber'] != null) await prefs.setInt('last_ayah_number', _asInt(d['lastAyahNumber']));
+          if (d['lifetimePagesTotal'] != null) await prefs.setInt('wird_lifetime_pages_total', _asInt(d['lifetimePagesTotal']));
         }
       }, failures);
 
@@ -187,12 +237,27 @@ class SyncService {
         }
       }, failures);
 
-      await _runIsolated('achievements', () async {
-        final a = await _doc('achievements').get();
-        if (a.exists) await prefs.setStringList('unlocked_achievements', List<String>.from(a.data()!['unlockedIds'] ?? []));
+      await _runIsolated('favorites', () async {
+        final f = await _doc('favorites').get();
+        if (f.exists) {
+          final d = f.data()!;
+          if (d['ayahs'] != null) await prefs.setStringList('favorite_ayahs_all', List<String>.from(d['ayahs']));
+          if (d['azkar'] != null) await prefs.setStringList('favorite_azkar_all', List<String>.from(d['azkar']));
+          if (d['hadiths'] != null) await prefs.setStringList('favorite_hadiths_all', List<String>.from(d['hadiths']));
+        }
       }, failures);
 
-      for (final e in {'favorites': 'favorites_data', 'bookmarks': 'bookmarks_data', 'khatma': 'khatma_plans_v2', 'prayer_log': 'prayer_log_data', 'tasbeeh_custom': 'tasbeeh_custom_phrases_v1'}.entries) {
+      await _runIsolated('prayer_log', () async {
+        final doc = await _doc('prayer_log').get();
+        if (doc.exists) {
+          final byDate = (doc.data()!['byDate'] as Map<String, dynamic>?) ?? {};
+          for (final e in byDate.entries) {
+            await prefs.setStringList('prayed_' + e.key, List<String>.from(e.value ?? []));
+          }
+        }
+      }, failures);
+
+      for (final e in {'bookmarks': 'advanced_bookmarks_v1', 'khatma': 'khatma_plans_v2_json', 'tasbeeh_custom': 'tasbeeh_custom_phrases_v1'}.entries) {
         await _runIsolated(e.key, () async {
           final doc = await _doc(e.key).get();
           if (doc.exists && doc.data()!['data'] != null) await prefs.setString(e.value, doc.data()!['data']);
@@ -375,8 +440,8 @@ class SyncService {
   Future<void> deleteAllCloudData() async {
     if (_uid == null) return;
     final collections = [
-      'settings', 'quran_progress', 'tasbeeh', 'achievements',
-      'favorites', 'bookmarks', 'khatma', 'prayer_log', 'profile',
+      'settings', 'quran_progress', 'tasbeeh',
+      'favorites', 'bookmarks', 'khatma', 'prayer_log', 'profile', 'tasbeeh_custom',
     ];
     for (final col in collections) {
       try {
