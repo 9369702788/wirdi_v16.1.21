@@ -590,6 +590,9 @@
   "radioSleepTimerActive": "يتوقف خلال {minutes} دقيقة",
   "radioOfficial": "رسمي",
   "radioStreamError": "تعذّر الاتصال بالمحطة. تحقق من اتصالك.",
+  "radioSearchTooltip": "بحث",
+  "radioSearchHint": "ابحث عن قناة...",
+  "radioSearchNoResults": "لا توجد نتائج",
   "@radioSleepTimerActive": {
     "placeholders": {
       "minutes": {

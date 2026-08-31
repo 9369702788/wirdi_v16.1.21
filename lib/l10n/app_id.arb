@@ -1030,6 +1030,9 @@
   "radioSleepTimerActive": "Berhenti dalam {minutes} mnt",
   "radioOfficial": "Resmi",
   "radioStreamError": "Tidak dapat terhubung ke stasiun. Periksa koneksi Anda.",
+  "radioSearchTooltip": "Cari",
+  "radioSearchHint": "Cari stasiun...",
+  "radioSearchNoResults": "Tidak ada hasil ditemukan",
   "@radioSleepTimerActive": {
     "placeholders": {
       "minutes": {

@@ -1030,6 +1030,9 @@
   "radioSleepTimerActive": "Se detiene en {minutes} min",
   "radioOfficial": "Oficial",
   "radioStreamError": "No se pudo conectar a la estación. Verifica tu conexión.",
+  "radioSearchTooltip": "Buscar",
+  "radioSearchHint": "Buscar una estación...",
+  "radioSearchNoResults": "No se encontraron resultados",
   "@radioSleepTimerActive": {
     "placeholders": {
       "minutes": {

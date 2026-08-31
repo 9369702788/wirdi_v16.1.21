@@ -572,6 +572,9 @@
   "radioSleepTimerActive": "{minutes} dakika sonra duruyor",
   "radioOfficial": "Resmi",
   "radioStreamError": "İstasyona bağlanılamadı. Bağlantınızı kontrol edin.",
+  "radioSearchTooltip": "Ara",
+  "radioSearchHint": "İstasyon ara...",
+  "radioSearchNoResults": "Sonuç bulunamadı",
   "@radioSleepTimerActive": {
     "placeholders": {
       "minutes": {

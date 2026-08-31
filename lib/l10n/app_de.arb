@@ -572,6 +572,9 @@
   "radioSleepTimerActive": "Stoppt in {minutes} Min",
   "radioOfficial": "Offiziell",
   "radioStreamError": "Verbindung zum Sender nicht möglich. Überprüfen Sie Ihre Verbindung.",
+  "radioSearchTooltip": "Suchen",
+  "radioSearchHint": "Sender suchen...",
+  "radioSearchNoResults": "Keine Ergebnisse gefunden",
   "@radioSleepTimerActive": {
     "placeholders": {
       "minutes": {
