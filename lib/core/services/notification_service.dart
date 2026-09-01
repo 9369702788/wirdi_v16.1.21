@@ -126,8 +126,9 @@ class NotificationService {
   /// resolving the real local zone would have been — [n.fireAt] is
   /// already a correct local DateTime (built from device-local
   /// year/month/day/hour/minute in prayer_service.dart), and combined
-  /// with `uiLocalNotificationDateInterpretation: absoluteTime` below,
-  /// the plugin fires at the right absolute moment regardless of what
+  /// (this plugin version schedules using absolute-instant semantics
+  /// by default, no extra parameter needed any more), the plugin fires
+  /// at the right absolute moment regardless of what
   /// Location label is attached.
   static Future<void> _ensureTimezone() async {
     if (_timezoneReady) return;
@@ -287,7 +288,6 @@ class NotificationService {
         tzTime,
         details,
         androidScheduleMode: AndroidScheduleMode.alarmClock,
-        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       );
       return null;
     } catch (e) {
@@ -366,7 +366,6 @@ class NotificationService {
           scheduled,
           details,
           androidScheduleMode: AndroidScheduleMode.alarmClock,
-          uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
           matchDateTimeComponents: matchComponents,
         );
         scheduledIds.add('${r.id}');
@@ -381,7 +380,6 @@ class NotificationService {
             scheduled,
             details,
             androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-            uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
             matchDateTimeComponents: matchComponents,
           );
           scheduledIds.add('${r.id}');
@@ -439,7 +437,6 @@ class NotificationService {
           tzTime,
           details,
           androidScheduleMode: AndroidScheduleMode.alarmClock,
-          uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
         );
         scheduledIds.add('${n.id}');
       } catch (e, st) {
@@ -452,7 +449,6 @@ class NotificationService {
             tzTime,
             details,
             androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-            uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
           );
           scheduledIds.add('${n.id}');
         } catch (e2, st2) {
