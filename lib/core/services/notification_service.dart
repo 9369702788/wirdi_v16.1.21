@@ -359,13 +359,27 @@ class NotificationService {
           ? DateTimeComponents.time
           : DateTimeComponents.dayOfWeekAndTime;
       try {
+        // ROOT CAUSE FIX (v132): AndroidScheduleMode.alarmClock is a
+        // one-shot exact-alarm API (AlarmManager.setAlarmClock()) with
+        // no native support for "and repeat this on a schedule" --
+        // pairing it with matchDateTimeComponents (which is what makes
+        // this a TRUE recurring daily/weekly reminder rather than a
+        // single one-off notification) either silently drops the
+        // recurrence or fails outright depending on the OS/plugin
+        // version. v128 mistakenly switched this call to alarmClock
+        // along with the (correctly one-shot) prayer-notification and
+        // test-button calls, which is exactly why every recurring
+        // reminder (Friday, morning/evening Azkar, daily wird, sleep
+        // Azkar) stopped firing at that point. exactAllowWhileIdle
+        // DOES support matchDateTimeComponents correctly and is the
+        // right primary choice for a genuinely recurring reminder.
         await _plugin.zonedSchedule(
           r.id,
           r.title,
           r.body,
           scheduled,
           details,
-          androidScheduleMode: AndroidScheduleMode.alarmClock,
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
           matchDateTimeComponents: matchComponents,
         );
         scheduledIds.add('${r.id}');
