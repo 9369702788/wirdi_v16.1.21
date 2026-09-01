@@ -27,7 +27,7 @@ dependencies:
   path_provider: ^2.1.5
   share_plus: ^10.1.4
   flutter_local_notifications: ^19.4.2
-  timezone: ^0.9.4
+  timezone: ^0.10.1
   audio_service: ^0.18.15
   package_info_plus: ^9.0.1
   wakelock_plus: ^1.2.4
