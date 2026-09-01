@@ -234,18 +234,36 @@ class NotificationService {
     }
   }
 
-  /// NEW: schedules (does NOT show immediately) a diagnostic
-  /// notification ~1 minute in the future, using the EXACT SAME
-  /// zonedSchedule() + exactAllowWhileIdle mechanism real prayer/daily
-  /// reminders use -- but self-contained and immediate to test, so it
-  /// proves or disproves "does scheduled delivery even work on this
-  /// device" within one minute, instead of needing to wait for a real
-  /// prayer time or daily reminder to (maybe) fire. If
-  /// [showTestNotification] works but this never arrives ~1 minute
-  /// later, the fault is isolated specifically to zonedSchedule()/
-  /// exact-alarm delivery on this device/ROM, not to permissions,
-  /// channels, or this app's own reminder-computation logic (which
-  /// never even runs for this test).
+  /// ROOT CAUSE FIX (v128): AndroidScheduleMode.exactAllowWhileIdle
+  /// (SCHEDULE_EXACT_ALARM's AlarmManager.setExactAndAllowWhileIdle)
+  /// was confirmed, via this exact diagnostic tool, to be silently
+  /// non-delivering on at least one real device even with every
+  /// relevant Android permission granted (POST_NOTIFICATIONS,
+  /// SCHEDULE_EXACT_ALARM) AND with battery optimization/"sleeping
+  /// apps" restrictions fully disabled for this app. This is a known
+  /// class of issue on some OEM ROMs (notably Samsung One UI), where
+  /// the OS's own power-management daemon can still deprioritize or
+  /// silently drop a "while idle" exact alarm despite the app-level
+  /// permission being granted.
+  ///
+  /// AndroidScheduleMode.alarmClock uses
+  /// AlarmManager.setAlarmClock() instead -- the SAME underlying API
+  /// real alarm-clock apps use. Android's power management treats
+  /// this category of alarm as a hard commitment to the user (a
+  /// visible alarm-clock icon appears in the status bar) and is
+  /// documented to be exempt from Doze/App Standby restrictions far
+  /// more reliably than any "while idle" exact-alarm variant. This is
+  /// the appropriate mechanism for a genuinely time-critical wake-up
+  /// event like a prayer Adhan, and is now used here, in
+  /// scheduleAll() (prayer notifications), and in scheduleRecurring()
+  /// (daily azkar/wird/Friday reminders) -- previously all three used
+  /// exactAllowWhileIdle as their primary attempt.
+  ///
+  /// Schedules (does NOT show immediately) a diagnostic notification
+  /// ~1 minute in the future, self-contained so it proves or
+  /// disproves "does scheduled delivery even work on this device"
+  /// within one minute, instead of needing to wait for a real prayer
+  /// time or daily reminder to (maybe) fire.
   static Future<String?> scheduleTestNotificationSoon() async {
     await initialize();
     await _ensureTimezone();
@@ -268,7 +286,7 @@ class NotificationService {
         'If you see this about 1 minute after tapping the button, scheduled notifications DO work on this device.',
         tzTime,
         details,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.alarmClock,
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       );
       return null;
@@ -347,7 +365,7 @@ class NotificationService {
           r.body,
           scheduled,
           details,
-          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          androidScheduleMode: AndroidScheduleMode.alarmClock,
           uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
           matchDateTimeComponents: matchComponents,
         );
@@ -420,7 +438,7 @@ class NotificationService {
           n.body,
           tzTime,
           details,
-          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          androidScheduleMode: AndroidScheduleMode.alarmClock,
           uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
         );
         scheduledIds.add('${n.id}');

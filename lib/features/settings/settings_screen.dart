@@ -207,7 +207,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // end user to see in Settings. Debug builds only now.
                 child: kDebugMode
                     ? const Text(
-                        'Merge build: v127-2026-08-31-fix-l10n-source-of-truth',
+                        'Merge build: v128-2026-08-31-alarmclock-scheduling-mode',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                       )
