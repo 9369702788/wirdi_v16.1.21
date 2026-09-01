@@ -91,7 +91,7 @@ class _ZakatCalculatorScreenState extends State<ZakatCalculatorScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [AppColors.primaryEmerald, Color(0xFF115E56)]),
+              gradient: LinearGradient(colors: [AppColors.primaryEmerald, Color(0xFF115E56)]),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Column(
@@ -107,7 +107,7 @@ class _ZakatCalculatorScreenState extends State<ZakatCalculatorScreen> {
                 else ...[
                   Text(l10n.zakatDue, style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 6),
-                  Text(zakatDue.toStringAsFixed(2), style: const TextStyle(color: AppColors.goldAccent, fontSize: 32, fontWeight: FontWeight.bold)),
+                  Text(zakatDue.toStringAsFixed(2), style: TextStyle(color: AppColors.goldAccent, fontSize: 32, fontWeight: FontWeight.bold)),
                 ],
               ],
             ),

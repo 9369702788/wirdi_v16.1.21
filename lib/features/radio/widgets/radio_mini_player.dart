@@ -61,10 +61,10 @@ class RadioMiniPlayer extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.bedtime, color: AppColors.goldAccent, size: 11),
+                    Icon(Icons.bedtime, color: AppColors.goldAccent, size: 11),
                     const SizedBox(width: 2),
                     Text('${svc.sleepMinutesRemaining}m',
-                        style: const TextStyle(color: AppColors.goldAccent,
+                        style: TextStyle(color: AppColors.goldAccent,
                             fontSize: 10, fontWeight: FontWeight.bold)),
                   ]),
                 ),

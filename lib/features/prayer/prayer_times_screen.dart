@@ -340,7 +340,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.wifi_off_rounded, size: 18, color: AppColors.goldAccent),
+                  Icon(Icons.wifi_off_rounded, size: 18, color: AppColors.goldAccent),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(l10n.prayerOfflineBanner, style: const TextStyle(fontSize: 13)),
@@ -351,7 +351,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
           Container(
             padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 colors: [AppColors.primaryEmerald, Color(0xFF115E56)],
                 begin: Alignment.topRight,
                 end: Alignment.bottomLeft,
@@ -376,7 +376,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                 Text(prayerDisplayName(l10n, result.next.name),
                     style: const TextStyle(color: Colors.white, fontSize: 34, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 10),
-                Text(_countdown, style: const TextStyle(color: AppColors.goldAccent, fontSize: 24, fontWeight: FontWeight.w700, letterSpacing: 1.5)),
+                Text(_countdown, style: TextStyle(color: AppColors.goldAccent, fontSize: 24, fontWeight: FontWeight.w700, letterSpacing: 1.5)),
                 const SizedBox(height: 6),
                 Text(l10n.prayerTimeRemaining, style: const TextStyle(color: Colors.white70)),
               ],

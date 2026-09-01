@@ -98,7 +98,7 @@ class _PrivacyCenterScreenState extends State<PrivacyCenterScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.shield_outlined, color: AppColors.primaryEmerald, size: 28),
+              Icon(Icons.shield_outlined, color: AppColors.primaryEmerald, size: 28),
               const SizedBox(width: 12),
               Expanded(child: Text(l10n.privacyCenterIntro, style: const TextStyle(fontWeight: FontWeight.w600))),
             ],
@@ -112,7 +112,7 @@ class _PrivacyCenterScreenState extends State<PrivacyCenterScreen> {
             child: Column(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.upload_file_outlined, color: AppColors.primaryEmerald),
+                  leading: Icon(Icons.upload_file_outlined, color: AppColors.primaryEmerald),
                   title: Text(l10n.privacyCenterExportButton),
                   trailing: _exporting
                       ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))

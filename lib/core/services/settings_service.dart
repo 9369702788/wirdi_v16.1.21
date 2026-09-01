@@ -155,6 +155,7 @@ class AppSettings extends ChangeNotifier {
       (t) => t.name == storedColorTheme,
       orElse: () => AppColorTheme.emerald,
     );
+    AppColors.updateCurrentTheme(_colorTheme);
 
     _fontScale = prefs.getDouble('settings_font_scale') ?? 1.0;
     _reciterId = prefs.getString('settings_reciter_id') ?? 'ar.alafasy';
@@ -299,6 +300,7 @@ class AppSettings extends ChangeNotifier {
 
   Future<void> setColorTheme(AppColorTheme theme) async {
     _colorTheme = theme;
+    AppColors.updateCurrentTheme(theme);
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('settings_color_theme', theme.name);

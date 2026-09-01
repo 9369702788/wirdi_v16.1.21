@@ -154,7 +154,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
               const SizedBox(height: 16),
               Text(l10n.qiblaNoCompassSensor, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.mutedText)),
               const SizedBox(height: 20),
-              Text('${qibla.round()}°', style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: AppColors.primaryEmerald)),
+              Text('${qibla.round()}°', style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: AppColors.primaryEmerald)),
               const SizedBox(height: 6),
               Text(l10n.qiblaBearingFromNorth, style: const TextStyle(color: AppColors.mutedText)),
               if (_distanceKm != null) ...[
@@ -251,7 +251,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
           child: Column(
             children: [
               if (isAligned)
-                Text(l10n.qiblaAligned, style: const TextStyle(color: AppColors.goldAccent, fontWeight: FontWeight.bold, fontSize: 16))
+                Text(l10n.qiblaAligned, style: TextStyle(color: AppColors.goldAccent, fontWeight: FontWeight.bold, fontSize: 16))
               else
                 Text(l10n.qiblaNotAligned, style: const TextStyle(color: AppColors.mutedText)),
               const SizedBox(height: 8),

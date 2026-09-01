@@ -28,21 +28,21 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     return Scaffold(
       appBar: AppBar(backgroundColor: AppColors.primaryEmerald, foregroundColor: Colors.white, title: Text(l.authForgotPassword), elevation: 0),
       body: Container(
-        decoration: const BoxDecoration(gradient: LinearGradient(colors: [AppColors.primaryEmerald, Color(0xFF064E3B)], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+        decoration: BoxDecoration(gradient: LinearGradient(colors: [AppColors.primaryEmerald, Color(0xFF064E3B)], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
         child: Padding(padding: const EdgeInsets.all(28),
           child: _sent
               ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  const Icon(Icons.mark_email_read_rounded, size: 80, color: AppColors.goldAccent),
+                  Icon(Icons.mark_email_read_rounded, size: 80, color: AppColors.goldAccent),
                   const SizedBox(height: 24),
                   Text(l.authResetEmailSent, textAlign: TextAlign.center, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
                   const SizedBox(height: 12),
                   Text(l.authResetEmailSentSubtitle, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 28),
-                  TextButton(onPressed: () => Navigator.pop(context), child: Text(l.authBackToLogin, style: const TextStyle(color: AppColors.goldAccent))),
+                  TextButton(onPressed: () => Navigator.pop(context), child: Text(l.authBackToLogin, style: TextStyle(color: AppColors.goldAccent))),
                 ])
               : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   const SizedBox(height: 24),
-                  const Icon(Icons.lock_reset_rounded, size: 64, color: AppColors.goldAccent),
+                  Icon(Icons.lock_reset_rounded, size: 64, color: AppColors.goldAccent),
                   const SizedBox(height: 16),
                   Text(l.authResetPasswordSubtitle, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70, fontSize: 14)),
                   const SizedBox(height: 28),
@@ -50,7 +50,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   TextFormField(controller: _ctrl, keyboardType: TextInputType.emailAddress, style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(labelText: l.authEmail, labelStyle: const TextStyle(color: Colors.white70), prefixIcon: const Icon(Icons.email_outlined, color: Colors.white70),
                       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.white30)),
-                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.goldAccent)))),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.goldAccent)))),
                   const SizedBox(height: 24),
                   FilledButton(
                     style: FilledButton.styleFrom(backgroundColor: AppColors.goldAccent, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),

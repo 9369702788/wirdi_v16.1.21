@@ -165,7 +165,7 @@ class _AzkarScreenState extends State<AzkarScreen> with SingleTickerProviderStat
                                   value: progress,
                                   minHeight: 5,
                                   backgroundColor: AppColors.primaryEmerald.withValues(alpha: 0.1),
-                                  valueColor: const AlwaysStoppedAnimation(AppColors.primaryEmerald),
+                                  valueColor: AlwaysStoppedAnimation(AppColors.primaryEmerald),
                                 ),
                               ),
                             ],
@@ -312,7 +312,7 @@ class _AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                       value: progress,
                       minHeight: 8,
                       backgroundColor: AppColors.primaryEmerald.withValues(alpha: 0.1),
-                      valueColor: const AlwaysStoppedAnimation(AppColors.primaryEmerald),
+                      valueColor: AlwaysStoppedAnimation(AppColors.primaryEmerald),
                     ),
                   ),
                 ),
@@ -367,7 +367,7 @@ class _AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                       ),
                       const Spacer(),
                       if (isDone)
-                        const Icon(Icons.check_circle, color: AppColors.primaryEmerald)
+                        Icon(Icons.check_circle, color: AppColors.primaryEmerald)
                       else
                         Text('$current / ${item.targetCount}',
                             style: const TextStyle(fontWeight: FontWeight.bold)),

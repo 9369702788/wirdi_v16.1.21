@@ -42,10 +42,10 @@ class SleepTimerSheet extends StatelessWidget {
                   border: Border.all(color: AppColors.goldAccent.withValues(alpha: 0.4)),
                 ),
                 child: Row(children: [
-                  const Icon(Icons.bedtime, color: AppColors.goldAccent, size: 20),
+                  Icon(Icons.bedtime, color: AppColors.goldAccent, size: 20),
                   const SizedBox(width: 8),
                   Text(l.radioSleepTimerActive(svc.sleepMinutesRemaining ?? 0),
-                      style: const TextStyle(color: AppColors.goldAccent, fontWeight: FontWeight.bold)),
+                      style: TextStyle(color: AppColors.goldAccent, fontWeight: FontWeight.bold)),
                   const Spacer(),
                   TextButton(
                     onPressed: () { svc.cancelSleepTimer(); Navigator.pop(context); },

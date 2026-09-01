@@ -437,7 +437,7 @@ class _SurahHeaderBanner extends StatelessWidget {
       alignment: Alignment.center,
       child: Text(
         currentSurah != null ? l10n.quranSurahAppBarTitle(currentSurah.name) : '',
-        style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold, color: AppColors.primaryEmerald),
+        style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold, color: AppColors.primaryEmerald),
       ),
     );
   }

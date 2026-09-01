@@ -22,7 +22,7 @@ class AboutScreen extends StatelessWidget {
                 color: AppColors.primaryEmerald.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.spa_outlined, color: AppColors.primaryEmerald, size: 40),
+              child: Icon(Icons.spa_outlined, color: AppColors.primaryEmerald, size: 40),
             ),
           ),
           const SizedBox(height: 16),

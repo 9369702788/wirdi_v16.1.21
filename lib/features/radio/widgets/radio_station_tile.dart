@@ -55,7 +55,7 @@ class RadioStationTile extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
             side: isThis
-                ? const BorderSide(color: AppColors.primaryEmerald, width: 1.5)
+                ? BorderSide(color: AppColors.primaryEmerald, width: 1.5)
                 : BorderSide.none,
           ),
           child: ListTile(
@@ -91,12 +91,12 @@ class RadioStationTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(station.category,
-                    style: const TextStyle(fontSize: 10,
+                    style: TextStyle(fontSize: 10,
                         color: AppColors.primaryEmerald, fontWeight: FontWeight.w600)),
               ),
               if (station.isOfficial) ...[
                 const SizedBox(width: 4),
-                const Icon(Icons.verified, size: 12, color: AppColors.goldAccent),
+                Icon(Icons.verified, size: 12, color: AppColors.goldAccent),
               ],
             ]),
             trailing: Row(mainAxisSize: MainAxisSize.min, children: [

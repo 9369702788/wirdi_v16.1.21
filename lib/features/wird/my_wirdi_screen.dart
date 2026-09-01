@@ -171,7 +171,7 @@ class _MyWirdiScreenState extends State<MyWirdiScreen> {
                         ),
                         const Divider(height: 1),
                         ListTile(
-                          leading: const Icon(Icons.menu_book, color: AppColors.primaryEmerald),
+                          leading: Icon(Icons.menu_book, color: AppColors.primaryEmerald),
                           title: Text(l10n.navQuran),
                           subtitle: Padding(
                             padding: const EdgeInsets.only(top: 6),
@@ -207,7 +207,7 @@ class _MyWirdiScreenState extends State<MyWirdiScreen> {
                         ),
                         const Divider(height: 1),
                         ListTile(
-                          leading: const Icon(Icons.fingerprint, color: AppColors.goldAccent),
+                          leading: Icon(Icons.fingerprint, color: AppColors.goldAccent),
                           title: Text(l10n.navTasbeeh),
                           subtitle: Padding(
                             padding: const EdgeInsets.only(top: 6),

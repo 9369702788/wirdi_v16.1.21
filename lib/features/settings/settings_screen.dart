@@ -207,7 +207,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // end user to see in Settings. Debug builds only now.
                 child: kDebugMode
                     ? const Text(
-                        'Merge build: v132-2026-09-01-fix-recurring-reminders',
+                        'Merge build: v133-2026-09-01-theme-rollout',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                       )
@@ -531,7 +531,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 12),
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.notifications_active_outlined, color: AppColors.primaryEmerald),
+                  leading: Icon(Icons.notifications_active_outlined, color: AppColors.primaryEmerald),
                   title: const Text('Send test notification now'),
                   subtitle: const Text('Diagnostic: checks if notifications can show on this device at all'),
                   onTap: () async {
@@ -549,7 +549,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 8),
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.schedule_send_outlined, color: AppColors.primaryEmerald),
+                  leading: Icon(Icons.schedule_send_outlined, color: AppColors.primaryEmerald),
                   title: const Text('Schedule test notification in 1 minute'),
                   subtitle: const Text('Diagnostic: proves whether SCHEDULED notifications (like Adhan/reminders) can actually fire on this device -- lock your screen and wait 1 minute after tapping'),
                   onTap: () async {
@@ -567,7 +567,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 12),
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.volume_up_rounded, color: AppColors.primaryEmerald),
+                  leading: Icon(Icons.volume_up_rounded, color: AppColors.primaryEmerald),
                   title: const Text('Test Adhan notification now'),
                   subtitle: const Text('Fires the REAL Adhan sound through the REAL notification channel immediately -- no need to wait for an actual prayer time'),
                   onTap: () async {
@@ -629,7 +629,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const Divider(height: 1),
                     ListTile(
-                      leading: const Icon(Icons.refresh, color: AppColors.primaryEmerald),
+                      leading: Icon(Icons.refresh, color: AppColors.primaryEmerald),
                       title: Text(l10n.settingsUpdateNow),
                       subtitle: Text(l10n.settingsRequiresInternet),
                       onTap: () async {

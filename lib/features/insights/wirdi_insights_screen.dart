@@ -268,26 +268,26 @@ class _WirdiInsightsScreenState extends State<WirdiInsightsScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.emoji_events_outlined, color: AppColors.goldAccent),
+                Icon(Icons.emoji_events_outlined, color: AppColors.goldAccent),
                 const SizedBox(width: 10),
                 Text(l10n.insightsBestDay, style: const TextStyle(fontWeight: FontWeight.w700)),
                 const Spacer(),
                 Text(
                   best != null ? _dayName(l10n, best.date.weekday) : l10n.insightsNoBestDayYet,
-                  style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryEmerald),
+                  style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryEmerald),
                 ),
               ],
             ),
             const Divider(height: 24),
             Row(
               children: [
-                const Icon(Icons.trending_up, color: AppColors.primaryEmerald),
+                Icon(Icons.trending_up, color: AppColors.primaryEmerald),
                 const SizedBox(width: 10),
                 Text(l10n.insightsMostConsistent, style: const TextStyle(fontWeight: FontWeight.w700)),
                 const Spacer(),
                 Text(
                   mostConsistentLabel ?? l10n.insightsNoBestDayYet,
-                  style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryEmerald),
+                  style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryEmerald),
                 ),
               ],
             ),

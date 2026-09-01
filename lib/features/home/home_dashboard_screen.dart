@@ -280,7 +280,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                             value: _myWirdiPercent,
                             strokeWidth: 5,
                             backgroundColor: AppColors.primaryEmerald.withValues(alpha: 0.12),
-                            valueColor: const AlwaysStoppedAnimation(AppColors.primaryEmerald),
+                            valueColor: AlwaysStoppedAnimation(AppColors.primaryEmerald),
                           ),
                           Text(
                             '${(_myWirdiPercent * 100).round()}%',
@@ -329,12 +329,12 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [Color(0xFF0B3D36), AppColors.primaryEmerald]),
+                        gradient: LinearGradient(colors: [Color(0xFF0B3D36), AppColors.primaryEmerald]),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.nightlight_round, color: AppColors.goldAccent, size: 28),
+                          Icon(Icons.nightlight_round, color: AppColors.goldAccent, size: 28),
                           const SizedBox(width: 14),
                           Expanded(
                             child: Column(
@@ -371,7 +371,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
+                  gradient: LinearGradient(
                     colors: [AppColors.primaryEmerald, Color(0xFF115E56)],
                     begin: Alignment.topRight,
                     end: Alignment.bottomLeft,
@@ -386,7 +386,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                     if (_prayer != null) ...[
                       Text(prayerDisplayName(l10n, _prayer!.next.name), style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w700)),
                       const SizedBox(height: 4),
-                      Text(l10n.homeInLabel(_countdown), style: const TextStyle(color: AppColors.goldAccent, fontSize: 16)),
+                      Text(l10n.homeInLabel(_countdown), style: TextStyle(color: AppColors.goldAccent, fontSize: 16)),
                       if (_prayer!.isFromCache)
                         Padding(
                           padding: const EdgeInsets.only(top: 6),
@@ -616,7 +616,7 @@ class _MiniProgress extends StatelessWidget {
               value: value,
               strokeWidth: 4,
               backgroundColor: AppColors.primaryEmerald.withValues(alpha: 0.12),
-              valueColor: const AlwaysStoppedAnimation(AppColors.goldAccent),
+              valueColor: AlwaysStoppedAnimation(AppColors.goldAccent),
             ),
             Text('${(value * 100).round()}%', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
           ],

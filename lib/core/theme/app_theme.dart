@@ -22,8 +22,14 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  static const primaryEmerald = Color(0xFF0F766E);
-  static const goldAccent = Color(0xFFD4AF37);
+  static AppColorTheme _currentTheme = AppColorTheme.emerald;
+
+  static void updateCurrentTheme(AppColorTheme theme) {
+    _currentTheme = theme;
+  }
+
+  static Color get primaryEmerald => AppTheme.definitions[_currentTheme]!.primary;
+  static Color get goldAccent => AppTheme.definitions[_currentTheme]!.accent;
   static const lightBackground = Color(0xFFF8FAF6);
   static const darkBackground = Color(0xFF071A17);
   static const darkCard = Color(0xFF102925);

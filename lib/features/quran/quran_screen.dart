@@ -221,14 +221,14 @@ class _SurahListTabState extends State<_SurahListTab> {
                                 value: ratio,
                                 minHeight: 6,
                                 backgroundColor: AppColors.primaryEmerald.withValues(alpha: 0.1),
-                                valueColor: const AlwaysStoppedAnimation(AppColors.primaryEmerald),
+                                valueColor: AlwaysStoppedAnimation(AppColors.primaryEmerald),
                               ),
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Text('${(ratio * 100).round()}%', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryEmerald)),
+                      Text('${(ratio * 100).round()}%', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryEmerald)),
                     ],
                   ),
                 ),
@@ -303,7 +303,7 @@ class _JuzListTab extends StatelessWidget {
           child: ListTile(
             leading: CircleAvatar(
               backgroundColor: AppColors.goldAccent.withValues(alpha: 0.15),
-              child: Text('${juz.juzNumber}', style: const TextStyle(color: AppColors.goldAccent, fontWeight: FontWeight.bold)),
+              child: Text('${juz.juzNumber}', style: TextStyle(color: AppColors.goldAccent, fontWeight: FontWeight.bold)),
             ),
             title: Text(l10n.quranJuzNumber(juz.juzNumber), style: const TextStyle(fontWeight: FontWeight.w700)),
             subtitle: Text(l10n.quranJuzStartsFrom(surah.name, juz.ayahNumber)),
@@ -787,7 +787,7 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
               ListTile(
                 title: Text(reciter.displayNameFor(languageCode)),
                 trailing: reciter.id == appSettings.reciterId
-                    ? const Icon(Icons.check, color: AppColors.primaryEmerald)
+                    ? Icon(Icons.check, color: AppColors.primaryEmerald)
                     : null,
                 onTap: () => Navigator.pop(context, reciter.id),
               ),
@@ -1019,14 +1019,14 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
               child: Container(
                 padding: const EdgeInsets.all(22),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [AppColors.primaryEmerald, Color(0xFF115E56)]),
+                  gradient: LinearGradient(colors: [AppColors.primaryEmerald, Color(0xFF115E56)]),
                   borderRadius: BorderRadius.circular(24),
                 ),
                 child: Column(
                   children: [
                     Text(l10n.quranSurahAppBarTitle(surah.name), style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
-                    Text(l10n.quranAyahCountLabel(surah.ayahs.length), style: const TextStyle(color: AppColors.goldAccent, fontSize: 18)),
+                    Text(l10n.quranAyahCountLabel(surah.ayahs.length), style: TextStyle(color: AppColors.goldAccent, fontSize: 18)),
                     if (Bismillah.shouldShowFor(surah.number)) ...[
                       const SizedBox(height: 14),
                       Text(

@@ -118,7 +118,7 @@ class _AdvancedQiblaScreenState extends State<AdvancedQiblaScreen> {
             const SizedBox(height: 16),
             Text(l10n.qiblaNoCompassSensor, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.mutedText)),
             const SizedBox(height: 20),
-            Text('${qibla.round()}°', style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: AppColors.primaryEmerald)),
+            Text('${qibla.round()}°', style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: AppColors.primaryEmerald)),
           ]),
         ),
       );
@@ -134,12 +134,12 @@ class _AdvancedQiblaScreenState extends State<AdvancedQiblaScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(color: AppColors.primaryEmerald.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10)),
         child: Row(children: [
-          const Icon(Icons.satellite_alt_outlined, size: 16, color: AppColors.primaryEmerald),
+          Icon(Icons.satellite_alt_outlined, size: 16, color: AppColors.primaryEmerald),
           const SizedBox(width: 8),
           Expanded(
             child: Text('Precision mode: geomagnetic true-north model'
                 '${_accuracy != null ? " - accuracy +/-${_accuracy!.round()} deg" : ""}',
-                style: const TextStyle(color: AppColors.primaryEmerald, fontSize: 12)),
+                style: TextStyle(color: AppColors.primaryEmerald, fontSize: 12)),
           ),
         ]),
       ),
@@ -175,7 +175,7 @@ class _AdvancedQiblaScreenState extends State<AdvancedQiblaScreen> {
         padding: const EdgeInsets.all(24),
         child: Column(children: [
           if (isAligned)
-            Text(l10n.qiblaAligned, style: const TextStyle(color: AppColors.goldAccent, fontWeight: FontWeight.bold, fontSize: 16))
+            Text(l10n.qiblaAligned, style: TextStyle(color: AppColors.goldAccent, fontWeight: FontWeight.bold, fontSize: 16))
           else
             Text(l10n.qiblaNotAligned, style: const TextStyle(color: AppColors.mutedText)),
           const SizedBox(height: 8),

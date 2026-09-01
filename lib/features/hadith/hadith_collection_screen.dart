@@ -167,7 +167,7 @@ class _HadithCollectionScreenState extends State<HadithCollectionScreen> {
                                 children: [
                                   Text(
                                     l10n.hadithNumberLabel(hadith.number),
-                                    style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryEmerald),
+                                    style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryEmerald),
                                   ),
                                   const SizedBox(height: 10),
                                   Text(

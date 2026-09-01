@@ -160,13 +160,13 @@ class _PlacesList extends StatelessWidget {
         final place = places[index];
         return Card(
           child: ListTile(
-            leading: const Icon(Icons.mosque_outlined, color: AppColors.primaryEmerald),
+            leading: Icon(Icons.mosque_outlined, color: AppColors.primaryEmerald),
             title: Text(place.name, style: const TextStyle(fontWeight: FontWeight.w700)),
             subtitle: place.address != null ? Text(place.address!) : null,
             trailing: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(place.distanceLabel, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryEmerald)),
+                Text(place.distanceLabel, style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryEmerald)),
                 const Icon(Icons.chevron_left, color: AppColors.mutedText, size: 18),
               ],
             ),

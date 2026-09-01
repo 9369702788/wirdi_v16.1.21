@@ -180,7 +180,7 @@ class _AccountScreenState extends State<AccountScreen> {
               if (user.displayName?.isNotEmpty == true) Text(user.displayName!, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
               Text(user.email ?? '', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
               const SizedBox(height: 4),
-              Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: AppColors.primaryEmerald.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)), child: Text(l.authCloudSyncEnabled, style: const TextStyle(fontSize: 11, color: AppColors.primaryEmerald, fontWeight: FontWeight.w600))),
+              Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: AppColors.primaryEmerald.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)), child: Text(l.authCloudSyncEnabled, style: TextStyle(fontSize: 11, color: AppColors.primaryEmerald, fontWeight: FontWeight.w600))),
             ])),
           ]))),
         const SizedBox(height: 16),

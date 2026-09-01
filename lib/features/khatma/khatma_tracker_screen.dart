@@ -201,7 +201,7 @@ class _KhatmaTrackerScreenState extends State<KhatmaTrackerScreen> {
     return ListView(padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + MediaQuery.of(context).padding.bottom),
       children: [
         const SizedBox(height: 12),
-        const Icon(Icons.menu_book_outlined, size: 64, color: AppColors.primaryEmerald),
+        Icon(Icons.menu_book_outlined, size: 64, color: AppColors.primaryEmerald),
         const SizedBox(height: 16),
         Text(
           l10n.khatmaNoPlanTitle,

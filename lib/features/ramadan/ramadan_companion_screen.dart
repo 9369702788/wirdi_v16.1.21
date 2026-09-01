@@ -176,14 +176,14 @@ class _RamadanCompanionScreenState extends State<RamadanCompanionScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [AppColors.primaryEmerald, Color(0xFF115E56)]),
+                        gradient: LinearGradient(colors: [AppColors.primaryEmerald, Color(0xFF115E56)]),
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: Column(
                         children: [
                           Text(countdownLabel, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
                           const SizedBox(height: 10),
-                          Text(_countdown, style: const TextStyle(color: AppColors.goldAccent, fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                          Text(_countdown, style: TextStyle(color: AppColors.goldAccent, fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                         ],
                       ),
                     ),
@@ -201,7 +201,7 @@ class _RamadanCompanionScreenState extends State<RamadanCompanionScreen> {
                       const SizedBox(height: 12),
                       Card(
                         child: ListTile(
-                          leading: const Icon(Icons.calendar_month, color: AppColors.primaryEmerald),
+                          leading: Icon(Icons.calendar_month, color: AppColors.primaryEmerald),
                           title: Text(l10n.ramadanDaysLoggedTitle),
                           trailing: Text('$_ramadanDaysLogged', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                         ),
@@ -222,7 +222,7 @@ class _RamadanCompanionScreenState extends State<RamadanCompanionScreen> {
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.star, color: AppColors.goldAccent),
+                                Icon(Icons.star, color: AppColors.goldAccent),
                                 const SizedBox(width: 8),
                                 Expanded(child: Text(l10n.ramadanLast10NightsTitle, style: const TextStyle(fontWeight: FontWeight.w700))),
                               ],
@@ -231,7 +231,7 @@ class _RamadanCompanionScreenState extends State<RamadanCompanionScreen> {
                             Text(l10n.ramadanLast10NightsBody, style: const TextStyle(fontSize: 13, color: AppColors.mutedText)),
                             if (hijri.day.isOdd) ...[
                               const SizedBox(height: 8),
-                              Text(l10n.ramadanPossibleLaylatAlQadr, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.goldAccent)),
+                              Text(l10n.ramadanPossibleLaylatAlQadr, style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.goldAccent)),
                             ],
                           ],
                         ),

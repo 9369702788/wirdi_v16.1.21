@@ -43,7 +43,7 @@ class _SplashScreenState extends State<SplashScreen>
     final l10n = AppLocalizations.of(context);
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -64,7 +64,7 @@ class _SplashScreenState extends State<SplashScreen>
                     color: Colors.white.withValues(alpha: 0.08),
                     border: Border.all(color: AppColors.goldAccent, width: 2),
                   ),
-                  child: const Icon(Icons.spa_outlined,
+                  child: Icon(Icons.spa_outlined,
                       color: AppColors.goldAccent, size: 44),
                 ),
                 const SizedBox(height: 24),

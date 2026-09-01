@@ -133,7 +133,7 @@ class _RadioScreenState extends State<RadioScreen>
                 if (RadioService.instance.hasSleepTimer)
                   Positioned(right: 0, top: 0,
                       child: Container(width: 8, height: 8,
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                               color: AppColors.goldAccent,
                               shape: BoxShape.circle))),
               ]),
@@ -321,7 +321,7 @@ class _NowPlayingBanner extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(l.radioNowPlaying,
-                style: const TextStyle(fontSize: 11,
+                style: TextStyle(fontSize: 11,
                     color: AppColors.primaryEmerald, fontWeight: FontWeight.w600)),
             Text(name, style: const TextStyle(fontWeight: FontWeight.bold),
                 maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -330,10 +330,10 @@ class _NowPlayingBanner extends StatelessWidget {
         if (svc.hasSleepTimer && svc.sleepMinutesRemaining != null)
           Padding(padding: const EdgeInsets.only(right: 8),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.bedtime, size: 14, color: AppColors.goldAccent),
+              Icon(Icons.bedtime, size: 14, color: AppColors.goldAccent),
               const SizedBox(width: 2),
               Text('${svc.sleepMinutesRemaining}m',
-                  style: const TextStyle(fontSize: 12,
+                  style: TextStyle(fontSize: 12,
                       color: AppColors.goldAccent, fontWeight: FontWeight.bold)),
             ])),
         svc.isLoading

@@ -107,10 +107,10 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     return Scaffold(body: Container(
-      decoration: const BoxDecoration(gradient: LinearGradient(colors: [AppColors.primaryEmerald, Color(0xFF064E3B)], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+      decoration: BoxDecoration(gradient: LinearGradient(colors: [AppColors.primaryEmerald, Color(0xFF064E3B)], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
       child: SafeArea(child: SingleChildScrollView(padding: EdgeInsets.fromLTRB(28, 28, 28, 28 + MediaQuery.of(context).padding.bottom), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         const SizedBox(height: 32),
-        const Icon(Icons.auto_stories_rounded, size: 64, color: AppColors.goldAccent),
+        Icon(Icons.auto_stories_rounded, size: 64, color: AppColors.goldAccent),
         const SizedBox(height: 12),
         Text(l.appTitle, textAlign: TextAlign.center, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white)),
         const SizedBox(height: 4),
@@ -128,7 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(height: 8),
           Align(alignment: AlignmentDirectional.centerEnd, child: TextButton(
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen())),
-            child: Text(l.authForgotPassword, style: const TextStyle(color: AppColors.goldAccent)))),
+            child: Text(l.authForgotPassword, style: TextStyle(color: AppColors.goldAccent)))),
         ])),
         const SizedBox(height: 8),
         FilledButton(
@@ -148,7 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 28),
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           Text(l.authNoAccount, style: const TextStyle(color: Colors.white70)),
-          TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())), child: Text(l.authRegister, style: const TextStyle(color: AppColors.goldAccent, fontWeight: FontWeight.bold))),
+          TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())), child: Text(l.authRegister, style: TextStyle(color: AppColors.goldAccent, fontWeight: FontWeight.bold))),
         ]),
         TextButton(onPressed: _skip, child: Text(l.authSkipForNow, style: const TextStyle(color: Colors.white38, fontSize: 13))),
       ])))));
@@ -162,7 +162,7 @@ class _F extends StatelessWidget {
   @override Widget build(BuildContext context) => TextFormField(controller: ctrl, keyboardType: keyboardType, obscureText: obscure, style: const TextStyle(color: Colors.white),
     decoration: InputDecoration(labelText: label, labelStyle: const TextStyle(color: Colors.white70), prefixIcon: Icon(icon, color: Colors.white70), suffixIcon: suffixIcon,
       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.white30)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.goldAccent)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.goldAccent)),
       errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red)),
       focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red)),
       errorStyle: const TextStyle(color: Colors.redAccent)), validator: validator);

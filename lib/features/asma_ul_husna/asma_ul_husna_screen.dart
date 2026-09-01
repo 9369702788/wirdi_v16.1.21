@@ -36,13 +36,13 @@ class AsmaUlHusnaScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('${name.number}', style: const TextStyle(color: AppColors.goldAccent, fontSize: 11, fontWeight: FontWeight.w700)),
+                  Text('${name.number}', style: TextStyle(color: AppColors.goldAccent, fontSize: 11, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 6),
                   Text(
                     name.arabic,
                     textAlign: TextAlign.center,
                     textDirection: TextDirection.rtl,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.primaryEmerald),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.primaryEmerald),
                   ),
                   const SizedBox(height: 6),
                   Text(name.transliteration, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, color: AppColors.mutedText)),
@@ -64,7 +64,7 @@ class AsmaUlHusnaScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(name.arabic, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.primaryEmerald), textDirection: TextDirection.rtl),
+              Text(name.arabic, style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.primaryEmerald), textDirection: TextDirection.rtl),
               const SizedBox(height: 8),
               Text(name.transliteration, style: const TextStyle(fontSize: 16, color: AppColors.mutedText)),
               const SizedBox(height: 16),

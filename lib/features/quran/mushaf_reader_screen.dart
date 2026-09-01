@@ -379,7 +379,7 @@ class _MushafReaderScreenState extends State<MushafReaderScreen> {
           leading: CircleAvatar(
             radius: 16,
             backgroundColor: AppColors.primaryEmerald.withValues(alpha: 0.1),
-            child: Text('${s.number}', style: const TextStyle(color: AppColors.primaryEmerald, fontSize: 12, fontWeight: FontWeight.bold)),
+            child: Text('${s.number}', style: TextStyle(color: AppColors.primaryEmerald, fontSize: 12, fontWeight: FontWeight.bold)),
           ),
           title: Text(s.name, textDirection: TextDirection.rtl),
           subtitle: Text('${s.englishName} \u2014 ${s.ayahs.length} ${_t(context, '\u0622\u064a\u0629', 'verses')}', style: const TextStyle(fontSize: 12, color: AppColors.mutedText)),

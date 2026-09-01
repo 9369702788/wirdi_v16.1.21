@@ -220,7 +220,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                             color: unlocked ? AppColors.mutedText : AppColors.mutedText.withValues(alpha: 0.6),
                           ),
                         ),
-                        trailing: unlocked ? const Icon(Icons.check_circle, color: AppColors.primaryEmerald) : null,
+                        trailing: unlocked ? Icon(Icons.check_circle, color: AppColors.primaryEmerald) : null,
                       ),
                     );
                   }),
